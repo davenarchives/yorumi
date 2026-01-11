@@ -342,13 +342,32 @@ function App() {
 
             {/* Pagination UI */}
             <div className="flex justify-center items-center mt-12 mb-8 gap-3">
+              {/* Back Buttons */}
+              {currentPage > 1 && (
+                <>
+                  <button
+                    onClick={() => setCurrentPage(1)}
+                    className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:bg-white/10 transition-all font-bold text-xs"
+                  >
+                    «
+                  </button>
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:bg-white/10 transition-all font-bold text-xs"
+                  >
+                    ‹
+                  </button>
+                </>
+              )}
+
               {/* Sliding window pagination logic */}
               {(() => {
                 const pages = [];
-                const startPage = Math.max(1, currentPage - 1);
-                const finalStart = Math.max(1, Math.min(startPage, lastVisiblePage - 2));
+                // Show 4 pages at a time as in the mockup
+                let start = Math.max(1, currentPage - 1);
+                if (start + 3 > lastVisiblePage) start = Math.max(1, lastVisiblePage - 3);
 
-                for (let i = finalStart; i <= Math.min(finalStart + 2, lastVisiblePage); i++) {
+                for (let i = start; i <= Math.min(start + 3, lastVisiblePage); i++) {
                   pages.push(i);
                 }
 
@@ -363,21 +382,22 @@ function App() {
                 ));
               })()}
 
+              {/* Forward Buttons */}
               {currentPage < lastVisiblePage && (
-                <button
-                  onClick={() => setCurrentPage(prev => Math.min(lastVisiblePage, prev + 1))}
-                  className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:bg-white/10 transition-all font-bold"
-                >
-                  ›
-                </button>
-              )}
-              {currentPage < lastVisiblePage && (
-                <button
-                  onClick={() => setCurrentPage(lastVisiblePage)}
-                  className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:bg-white/10 transition-all font-bold"
-                >
-                  »
-                </button>
+                <>
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(lastVisiblePage, prev + 1))}
+                    className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:bg-white/10 transition-all font-bold text-xs"
+                  >
+                    ›
+                  </button>
+                  <button
+                    onClick={() => setCurrentPage(lastVisiblePage)}
+                    className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:bg-white/10 transition-all font-bold text-xs"
+                  >
+                    »
+                  </button>
+                </>
               )}
             </div>
 
