@@ -1,0 +1,29 @@
+export interface Manga {
+    mal_id: number;
+    title: string;
+    images: {
+        jpg: {
+            image_url: string;
+            large_image_url: string;
+        };
+    };
+    score: number;
+    rank?: number;
+    status: string;
+    type: string;
+    chapters: number | null;
+    volumes: number | null;
+    synopsis?: string;
+}
+
+export interface MangaChapter {
+    id: string;
+    title: string;
+    url: string;
+    uploadDate: string;
+}
+
+export interface MangaPage {
+    pageNumber: number;
+    imageUrl: string;
+}
