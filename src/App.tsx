@@ -114,6 +114,12 @@ function App() {
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
+  const streamCache = useRef(new Map<string, Promise<StreamLink[]>>());
+  const scraperSessionCache = useRef(new Map<number, string>()); // mal_id -> session
+  const episodesCache = useRef(new Map<string, Episode[]>()); // session -> episodes
+  const mangaIdCache = useRef(new Map<number, string>()); // mal_id -> mangakatana_id
+  const mangaChaptersCache = useRef(new Map<string, MangaChapter[]>()); // mangakatana_id -> chapters
+  const chapterPagesCache = useRef(new Map<string, Promise<MangaPage[]>>()); // chapter_url -> pages_promise
 
   const currentStream = streams[selectedStreamIndex] || null;
 
@@ -125,6 +131,9 @@ function App() {
         if (hlsRef.current) hlsRef.current.destroy();
         const hls = new Hls({
           capLevelToPlayerSize: true, // Help with "auto" if it's a master playlist
+          enableWorker: true,
+          lowLatencyMode: true,
+          backBufferLength: 90
         });
         hls.loadSource(currentStream.directUrl);
         hls.attachMedia(videoRef.current);
@@ -139,7 +148,7 @@ function App() {
     const fetchTopAnime = async () => {
       try {
         setLoading(true);
-        const res = await fetch(`http://localhost:3001/api/jikan/top?page=${currentPage}&limit=24`);
+        const res = await fetch(`http://localhost:3001/api/mal/top?page=${currentPage}&limit=24`);
         if (!res.ok) throw new Error('Failed to fetch');
         const data = await res.json();
 
@@ -167,7 +176,7 @@ function App() {
     const fetchTopManga = async () => {
       try {
         setMangaLoading(true);
-        const res = await fetch(`http://localhost:3001/api/jikan/top/manga?page=${mangaPage}&limit=24`);
+        const res = await fetch(`http://localhost:3001/api/mal/top/manga?page=${mangaPage}&limit=24`);
         if (!res.ok) throw new Error('Failed to fetch manga');
         const data = await res.json();
 
@@ -219,8 +228,8 @@ function App() {
       try {
 
         const url = activeTab === 'manga'
-          ? `http://localhost:3001/api/jikan/search/manga?q=${encodeURIComponent(searchQuery)}&page=${currentPage}&limit=24`
-          : `http://localhost:3001/api/jikan/search?q=${encodeURIComponent(searchQuery)}&page=${currentPage}&limit=24`;
+          ? `http://localhost:3001/api/mal/search/manga?q=${encodeURIComponent(searchQuery)}&page=${currentPage}&limit=24`
+          : `http://localhost:3001/api/mal/search?q=${encodeURIComponent(searchQuery)}&page=${currentPage}&limit=24`;
 
         const res = await fetch(url);
         const data = await res.json();
@@ -267,40 +276,80 @@ function App() {
     setCurrentEpisode(null);
     setStreams([]);
     setScraperSession(null);
+    streamCache.current.clear();
 
     try {
-      // 1. Fetch full details to get synopsis
-      console.log(`Fetching details for ID ${anime.mal_id}...`);
-      const detailRes = await fetch(`http://localhost:3001/api/jikan/anime/${anime.mal_id}`);
-      const detailData = await detailRes.json();
-      if (detailData && detailData.data) {
-        setSelectedAnime(detailData.data);
-      }
+      const fetchDetails = async () => {
+        console.log(`Fetching details for ID ${anime.mal_id}...`);
+        try {
+          const detailRes = await fetch(`http://localhost:3001/api/mal/anime/${anime.mal_id}`);
+          const detailData = await detailRes.json();
+          if (detailData && detailData.data) {
+            setSelectedAnime(detailData.data);
+          }
+        } catch (e) {
+          console.error("Failed to fetch details", e);
+        }
+      };
 
-      // 2. Search for the anime to get session
-      console.log(`Searching for ${anime.title} on scraper...`);
-      let searchRes = await fetch(`http://localhost:3001/api/scraper/search?q=${encodeURIComponent(anime.title)}`);
-      let searchData = await searchRes.json();
+      const resolveScraperSession = async () => {
+        // Check cache first
+        if (scraperSessionCache.current.has(anime.mal_id)) {
+          const session = scraperSessionCache.current.get(anime.mal_id)!;
+          console.log(`Using cached scraper session: ${session}`);
+          return session;
+        }
 
-      if ((!searchData || searchData.length === 0) && anime.title.includes(':')) {
-        const simpleTitle = anime.title.split(':')[0].trim();
-        console.log(`No results for full title, trying fallback: ${simpleTitle}`);
-        searchRes = await fetch(`http://localhost:3001/api/scraper/search?q=${encodeURIComponent(simpleTitle)}`);
-        searchData = await searchRes.json();
-      }
+        console.log(`Searching for ${anime.title} on scraper...`);
+        let searchRes = await fetch(`http://localhost:3001/api/scraper/search?q=${encodeURIComponent(anime.title)}`);
+        let searchData = await searchRes.json();
 
-      if (searchData && searchData.length > 0) {
-        const session = searchData[0].session || searchData[0].id;
+        if ((!searchData || searchData.length === 0) && anime.title.includes(':')) {
+          const simpleTitle = anime.title.split(':')[0].trim();
+          console.log(`No results for full title, trying fallback: ${simpleTitle}`);
+          searchRes = await fetch(`http://localhost:3001/api/scraper/search?q=${encodeURIComponent(simpleTitle)}`);
+          searchData = await searchRes.json();
+        }
+
+        if (searchData && searchData.length > 0) {
+          const session = searchData[0].session || searchData[0].id;
+          scraperSessionCache.current.set(anime.mal_id, session);
+          return session;
+        }
+        return null;
+      };
+
+      // Execute in parallel
+      const [_, session] = await Promise.all([
+        fetchDetails(),
+        resolveScraperSession()
+      ]);
+
+      if (session) {
         setScraperSession(session);
-        const epRes = await fetch(`http://localhost:3001/api/scraper/episodes?session=${session}`);
-        const epData = await epRes.json();
 
-        if (epData && epData.episodes) {
-          setEpisodes(epData.episodes);
-        } else if (epData && epData.ep_details) {
-          setEpisodes(epData.ep_details);
-        } else if (Array.isArray(epData)) {
-          setEpisodes(epData);
+        // Check Episode Cache
+        if (episodesCache.current.has(session)) {
+          console.log(`Using cached episodes for session: ${session}`);
+          setEpisodes(episodesCache.current.get(session)!);
+        } else {
+          // Fetch Episodes
+          const epRes = await fetch(`http://localhost:3001/api/scraper/episodes?session=${session}`);
+          const epData = await epRes.json();
+
+          let newEpisodes: Episode[] = [];
+          if (epData && epData.episodes) {
+            newEpisodes = epData.episodes;
+          } else if (epData && epData.ep_details) {
+            newEpisodes = epData.ep_details;
+          } else if (Array.isArray(epData)) {
+            newEpisodes = epData;
+          }
+
+          if (newEpisodes.length > 0) {
+            episodesCache.current.set(session, newEpisodes);
+            setEpisodes(newEpisodes);
+          }
         }
       }
     } catch (e) {
@@ -317,6 +366,44 @@ function App() {
     return '360P';
   };
 
+  const getStreamData = async (episode: Episode, currentScraperSession: string): Promise<StreamLink[]> => {
+    const res = await fetch(`http://localhost:3001/api/scraper/streams?anime_session=${currentScraperSession}&ep_session=${episode.session}`);
+    const data = await res.json();
+
+    if (data && data.length > 0) {
+      const qualityMap = new Map<string, StreamLink>();
+      const sortedData = [...data].sort((a: StreamLink, b: StreamLink) => (parseInt(b.quality) || 0) - (parseInt(a.quality) || 0));
+
+      sortedData.forEach((s: StreamLink) => {
+        const mapped = getMappedQuality(s.quality);
+        if (!qualityMap.has(mapped)) {
+          qualityMap.set(mapped, s);
+        }
+      });
+
+      return Array.from(qualityMap.values());
+    }
+    return [];
+  };
+
+  const ensureStreamData = (episode: Episode): Promise<StreamLink[]> => {
+    if (!scraperSession) return Promise.resolve([]);
+    if (!streamCache.current.has(episode.session)) {
+      const promise = getStreamData(episode, scraperSession)
+        .catch(e => {
+          console.error("Failed to load stream", e);
+          streamCache.current.delete(episode.session);
+          return [];
+        });
+      streamCache.current.set(episode.session, promise);
+    }
+    return streamCache.current.get(episode.session)!;
+  };
+
+  const prefetchStream = (episode: Episode) => {
+    if (scraperSession) ensureStreamData(episode);
+  };
+
   const loadStream = async (episode: Episode) => {
     if (!scraperSession) return;
     setCurrentEpisode(episode);
@@ -326,23 +413,10 @@ function App() {
     setIsAutoQuality(true);
 
     try {
-      const res = await fetch(`http://localhost:3001/api/scraper/streams?anime_session=${scraperSession}&ep_session=${episode.session}`);
-      const data = await res.json();
+      const standardizedStreams = await ensureStreamData(episode);
 
-      if (data && data.length > 0) {
-        const qualityMap = new Map<string, StreamLink>();
-        const sortedData = [...data].sort((a: StreamLink, b: StreamLink) => (parseInt(b.quality) || 0) - (parseInt(a.quality) || 0));
-
-        sortedData.forEach((s: StreamLink) => {
-          const mapped = getMappedQuality(s.quality);
-          if (!qualityMap.has(mapped)) {
-            qualityMap.set(mapped, s);
-          }
-        });
-
-        const standardizedStreams = Array.from(qualityMap.values());
+      if (standardizedStreams.length > 0) {
         setStreams(standardizedStreams);
-
         if (!standardizedStreams[0].directUrl) setPlayerMode('embed');
       } else {
         console.log("No streams found");
@@ -370,7 +444,9 @@ function App() {
     setSelectedAnime(null);
     setEpisodes([]);
     setCurrentEpisode(null);
+    setCurrentEpisode(null);
     setStreams([]);
+    streamCache.current.clear();
     if (hlsRef.current) {
       hlsRef.current.destroy();
       hlsRef.current = null;
@@ -387,24 +463,43 @@ function App() {
     setZoomLevel(60);
 
     try {
-      // Search for the manga on MangaKatana
-      console.log(`Searching for ${manga.title} on MangaKatana...`);
-      const searchRes = await fetch(`http://localhost:3001/api/manga/search?q=${encodeURIComponent(manga.title)}`);
-      const searchData = await searchRes.json();
+      let mangaId: string | null = null;
 
-      if (searchData?.data && searchData.data.length > 0) {
-        const mangaId = searchData.data[0].id;
+      // Check Cache
+      if (mangaIdCache.current.has(manga.mal_id)) {
+        mangaId = mangaIdCache.current.get(manga.mal_id)!;
+        console.log(`Using cached manga ID: ${mangaId}`);
+      } else {
+        // Search for the manga on MangaKatana
+        console.log(`Searching for ${manga.title} on MangaKatana...`);
+        const searchRes = await fetch(`http://localhost:3001/api/manga/search?q=${encodeURIComponent(manga.title)}`);
+        const searchData = await searchRes.json();
+
+        if (searchData?.data && searchData.data.length > 0) {
+          mangaId = searchData.data[0].id;
+          mangaIdCache.current.set(manga.mal_id, mangaId);
+        } else {
+          console.log('Manga not found on MangaKatana');
+        }
+      }
+
+      if (mangaId) {
         console.log(`Found manga: ${mangaId}, fetching chapters...`);
 
-        // Fetch chapters
-        const chaptersRes = await fetch(`http://localhost:3001/api/manga/chapters/${encodeURIComponent(mangaId)}`);
-        const chaptersData = await chaptersRes.json();
+        // Check Chapters Cache
+        if (mangaChaptersCache.current.has(mangaId)) {
+          console.log('Using cached chapters');
+          setMangaChapters(mangaChaptersCache.current.get(mangaId)!);
+        } else {
+          // Fetch chapters
+          const chaptersRes = await fetch(`http://localhost:3001/api/manga/chapters/${encodeURIComponent(mangaId)}`);
+          const chaptersData = await chaptersRes.json();
 
-        if (chaptersData?.data) {
-          setMangaChapters(chaptersData.data);
+          if (chaptersData?.data) {
+            mangaChaptersCache.current.set(mangaId, chaptersData.data);
+            setMangaChapters(chaptersData.data);
+          }
         }
-      } else {
-        console.log('Manga not found on MangaKatana');
       }
     } catch (e) {
       console.error('Failed to load manga chapters:', e);
@@ -413,18 +508,33 @@ function App() {
     }
   };
 
+  const ensureChapterPages = (chapter: MangaChapter): Promise<MangaPage[]> => {
+    if (!chapterPagesCache.current.has(chapter.url)) {
+      const p = fetch(`http://localhost:3001/api/manga/pages?url=${encodeURIComponent(chapter.url)}`)
+        .then(res => res.json())
+        .then(data => data.data || [])
+        .catch(e => {
+          console.error("Failed to fetch pages", e);
+          chapterPagesCache.current.delete(chapter.url);
+          return [];
+        });
+      chapterPagesCache.current.set(chapter.url, p as Promise<MangaPage[]>);
+    }
+    return chapterPagesCache.current.get(chapter.url)!;
+  };
+
+  const prefetchChapter = (chapter: MangaChapter) => {
+    ensureChapterPages(chapter);
+  };
+
   const loadMangaChapter = async (chapter: MangaChapter) => {
     setCurrentMangaChapter(chapter);
     setMangaPagesLoading(true);
     setChapterPages([]);
 
     try {
-      const res = await fetch(`http://localhost:3001/api/manga/pages?url=${encodeURIComponent(chapter.url)}`);
-      const data = await res.json();
-
-      if (data?.data) {
-        setChapterPages(data.data);
-      }
+      const pages = await ensureChapterPages(chapter);
+      setChapterPages(pages);
     } catch (e) {
       console.error('Failed to load chapter pages:', e);
     } finally {
@@ -456,7 +566,7 @@ function App() {
           <form onSubmit={handleSearch} className="relative flex items-center">
             <input
               type="text"
-              placeholder="Search anime..."
+              placeholder={activeTab === 'manga' ? "Search manga..." : "Search anime..."}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="bg-white/5 border border-white/10 rounded-full py-2 px-6 pr-12 w-64 md:w-80 text-sm focus:outline-none focus:border-white/20 focus:bg-white/10 transition-all placeholder:text-gray-500"
@@ -656,6 +766,7 @@ function App() {
                           <div
                             key={ep.session}
                             onClick={() => loadStream(ep)}
+                            onMouseEnter={() => prefetchStream(ep)}
                             className={`p-4 cursor-pointer hover:bg-white/5 transition-colors border-l-2 ${currentEpisode?.session === ep.session ? 'bg-white/10 border-[#facc15]' : 'border-transparent'}`}
                           >
                             <div className="flex items-center justify-between font-mono text-sm text-gray-400">
