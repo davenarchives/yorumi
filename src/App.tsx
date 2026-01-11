@@ -476,10 +476,24 @@ function App() {
         const searchData = await searchRes.json();
 
         if (searchData?.data && searchData.data.length > 0) {
-          // TODO: Implement smarter matching or source preference
-          mangaId = searchData.data[0].id;
-          console.log(`Found match: ${mangaId} (${searchData.data[0].source})`);
-          mangaIdCache.current.set(manga.mal_id, mangaId);
+          const results = searchData.data as any[];
+          console.log('Search results:', results.map(r => `${r.source}:${r.title}`));
+
+          let match;
+          // Strategy: If Manhwa, prefer Asura. Else prefer MangaKatana.
+          if (manga.type === 'Manhwa') {
+            console.log('Content is Manhwa, prioritizing AsuraScans...');
+            match = results.find(r => r.source === 'asura') || results[0];
+          } else {
+            console.log('Content is NOT Manhwa, prioritizing MangaKatana/Others...');
+            match = results.find(r => r.source === 'mangakatana') || results[0];
+          }
+
+          if (match) {
+            mangaId = match.id;
+            console.log(`Selected match: ${mangaId} (${match.source})`);
+            mangaIdCache.current.set(manga.mal_id, mangaId);
+          }
         } else {
           console.log('Manga not found on any scraper');
         }
