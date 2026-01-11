@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import * as jikanService from '../services/jikanService';
+import * as jikanService from './jikan.service';
 
 const router = Router();
 

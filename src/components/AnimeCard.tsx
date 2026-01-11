@@ -18,11 +18,12 @@ interface Anime {
 
 interface AnimeCardProps {
     anime: Anime;
+    onClick: (anime: Anime) => void;
 }
 
-const AnimeCard: React.FC<AnimeCardProps> = ({ anime }) => {
+const AnimeCard: React.FC<AnimeCardProps> = ({ anime, onClick }) => {
     return (
-        <div className="group relative bg-[#1a1a1a] rounded-lg overflow-hidden transition-transform duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-black/50 cursor-pointer">
+        <div onClick={() => onClick(anime)} className="group relative bg-[#1a1a1a] rounded-lg overflow-hidden transition-transform duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-black/50 cursor-pointer">
             {/* Image Container */}
             <div className="relative aspect-[2/3] overflow-hidden">
                 <img
