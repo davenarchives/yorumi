@@ -79,6 +79,31 @@ export async function searchManga(query: string): Promise<MangaSearchResult[]> {
             }
         });
 
+        // Check for redirect to detail page (no book_list, but has info heading)
+        if (results.length === 0) {
+            const detailTitle = $('.info .heading').text().trim();
+            if (detailTitle) {
+                // We are on a detail page
+                // The URL in axiosInstance might be the original search URL, 
+                // so we need to rely on the fact we are on a detail page.
+                // However, axios response object has `request.res.responseUrl` which is the final URL
+                const finalUrl = response.request.res.responseUrl;
+
+                if (finalUrl && finalUrl.includes('/manga/')) {
+                    const id = finalUrl.split('/manga/')[1].replace(/\/$/, '');
+                    const thumbnail = $('div.media div.cover img').attr('src') || '';
+
+                    results.push({
+                        id,
+                        title: detailTitle,
+                        url: finalUrl,
+                        thumbnail,
+                        source: 'mangakatana'
+                    });
+                }
+            }
+        }
+
         return results;
     } catch (error) {
         console.error('Error searching manga:', error);
