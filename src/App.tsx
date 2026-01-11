@@ -1,83 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import AnimeCard from './components/AnimeCard';
 import MangaCard from './components/MangaCard';
+import AnimeDetailsModal from './components/modals/AnimeDetailsModal';
 import './App.css';
 import Hls from 'hls.js';
-
-interface Anime {
-  mal_id: number;
-  title: string;
-  title_japanese?: string;
-  images: {
-    jpg: {
-      image_url: string;
-      large_image_url: string;
-    };
-  };
-  score: number;
-  rank?: number;
-  status: string;
-  type: string;
-  episodes: number | null;
-  year?: number;
-  synopsis?: string;
-  genres?: { mal_id: number; name: string; }[];
-  studios?: { mal_id: number; name: string; }[];
-  producers?: { mal_id: number; name: string; }[];
-  aired?: {
-    from?: string;
-    to?: string;
-    string?: string;
-  };
-  duration?: string;
-  rating?: string;
-  season?: string;
-}
-
-interface Episode {
-  session: string;
-  episodeNumber: string;
-  duration?: string;
-  title?: string;
-}
-
-interface Manga {
-  mal_id: number;
-  title: string;
-  images: {
-    jpg: {
-      image_url: string;
-      large_image_url: string;
-    };
-  };
-  score: number;
-  rank?: number;
-  status: string;
-  type: string;
-  chapters: number | null;
-  volumes: number | null;
-  synopsis?: string;
-}
-
-interface MangaChapter {
-  id: string;
-  title: string;
-  url: string;
-  uploadDate: string;
-}
-
-interface MangaPage {
-  pageNumber: number;
-  imageUrl: string;
-}
-
-interface StreamLink {
-  quality: string;
-  audio: string;
-  url: string;
-  directUrl?: string;
-  isHls: boolean;
-}
+import type { Anime, Episode } from './types/anime';
+import type { Manga, MangaChapter, MangaPage } from './types/manga';
+import type { StreamLink } from './types/stream';
 
 function App() {
   const [topAnime, setTopAnime] = useState<Anime[]>([]);
@@ -754,106 +683,12 @@ function App() {
       </main>
 
       {/* Anime Details Modal */}
-      {showAnimeDetails && selectedAnime && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-md">
-          <div className="w-full max-w-6xl h-[90vh] bg-[#1a1a1a] rounded-lg overflow-hidden flex flex-col m-4">
-            <div className="flex items-center justify-between p-6 border-b border-white/10">
-              <div>
-                <h1 className="text-3xl font-bold">{selectedAnime.title}</h1>
-                {selectedAnime.title_japanese && (
-                  <p className="text-sm text-gray-400 mt-1">{selectedAnime.title_japanese}</p>
-                )}
-              </div>
-              <button onClick={closeDetails} className="text-gray-400 hover:text-white transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-6">
-              <div className="flex gap-8">
-                <div className="w-64 flex-shrink-0">
-                  <img src={selectedAnime.images.jpg.large_image_url} alt={selectedAnime.title} className="w-full rounded-lg shadow-2xl" />
-                  <button
-                    onClick={startWatching}
-                    className="w-full mt-4 py-3 bg-[#facc15] hover:bg-[#fbbf24] text-black font-bold rounded-lg transition-colors flex items-center justify-center gap-2"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
-                      <path fillRule="evenodd" d="M4.5 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.986V5.653z" clipRule="evenodd" />
-                    </svg>
-                    Watch Now
-                  </button>
-                </div>
-                <div className="flex-1 space-y-6">
-                  <div className="flex flex-wrap gap-2">
-                    <span className="px-3 py-1 bg-white/10 rounded text-sm">{selectedAnime.type}</span>
-                    {selectedAnime.rating && <span className="px-3 py-1 bg-purple-900/30 text-purple-400 rounded text-sm">{selectedAnime.rating}</span>}
-                    {selectedAnime.episodes && <span className="px-3 py-1 bg-blue-900/30 text-blue-400 rounded text-sm">{selectedAnime.episodes} Episodes</span>}
-                    <span className="px-3 py-1 bg-[#facc15] text-black font-bold rounded text-sm flex items-center gap-1">
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
-                        <path fillRule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clipRule="evenodd" />
-                      </svg>
-                      {selectedAnime.score}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    {selectedAnime.aired?.string && (
-                      <div>
-                        <h4 className="text-xs text-gray-500 uppercase mb-1">Aired</h4>
-                        <p className="text-sm">{selectedAnime.aired.string}</p>
-                      </div>
-                    )}
-                    {selectedAnime.season && (
-                      <div>
-                        <h4 className="text-xs text-gray-500 uppercase mb-1">Premiered</h4>
-                        <p className="text-sm capitalize">{selectedAnime.season} {selectedAnime.year}</p>
-                      </div>
-                    )}
-                    {selectedAnime.duration && (
-                      <div>
-                        <h4 className="text-xs text-gray-500 uppercase mb-1">Duration</h4>
-                        <p className="text-sm">{selectedAnime.duration}</p>
-                      </div>
-                    )}
-                    <div>
-                      <h4 className="text-xs text-gray-500 uppercase mb-1">Status</h4>
-                      <p className={`text-sm ${selectedAnime.status === 'Currently Airing' ? 'text-green-400' : ''}`}>{selectedAnime.status}</p>
-                    </div>
-                  </div>
-                  {selectedAnime.genres && selectedAnime.genres.length > 0 && (
-                    <div>
-                      <h4 className="text-xs text-gray-500 uppercase mb-2">Genres</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {selectedAnime.genres.map(genre => (
-                          <span key={genre.mal_id} className="px-3 py-1 bg-white/5 hover:bg-white/10 rounded text-sm transition-colors cursor-pointer">
-                            {genre.name}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {selectedAnime.studios && selectedAnime.studios.length > 0 && (
-                    <div>
-                      <h4 className="text-xs text-gray-500 uppercase mb-1">Studios</h4>
-                      <p className="text-sm">{selectedAnime.studios.map(s => s.name).join(', ')}</p>
-                    </div>
-                  )}
-                  {selectedAnime.producers && selectedAnime.producers.length > 0 && (
-                    <div>
-                      <h4 className="text-xs text-gray-500 uppercase mb-1">Producers</h4>
-                      <p className="text-sm text-gray-400">{selectedAnime.producers.map(p => p.name).join(', ')}</p>
-                    </div>
-                  )}
-                  <div>
-                    <h4 className="text-xs text-gray-500 uppercase mb-2">Synopsis</h4>
-                    <p className="text-sm text-gray-300 leading-relaxed">{selectedAnime.synopsis || 'No synopsis available.'}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <AnimeDetailsModal
+        isOpen={showAnimeDetails && !!selectedAnime}
+        anime={selectedAnime!}
+        onClose={closeDetails}
+        onWatchNow={startWatching}
+      />
 
       {/* Watch Modal */}
       {
