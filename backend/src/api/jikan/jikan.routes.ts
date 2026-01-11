@@ -7,13 +7,14 @@ router.get('/search', async (req: Request, res: Response) => {
     try {
         const query = req.query.q as string;
         const page = req.query.page ? parseInt(req.query.page as string) : 1;
+        const limit = req.query.limit ? parseInt(req.query.limit as string) : 24;
 
         if (!query) {
             res.status(400).json({ error: 'Query parameter "q" is required' });
             return;
         }
 
-        const data = await jikanService.searchAnime(query, page);
+        const data = await jikanService.searchAnime(query, page, limit);
         res.json(data);
     } catch (error) {
         res.status(500).json({ error: 'Internal Server Error' });
@@ -38,7 +39,8 @@ router.get('/anime/:id', async (req: Request, res: Response) => {
 router.get('/top', async (req: Request, res: Response) => {
     try {
         const page = req.query.page ? parseInt(req.query.page as string) : 1;
-        const data = await jikanService.getTopAnime(page);
+        const limit = req.query.limit ? parseInt(req.query.limit as string) : 24;
+        const data = await jikanService.getTopAnime(page, limit);
         res.json(data);
     } catch (error) {
         res.status(500).json({ error: 'Internal Server Error' });

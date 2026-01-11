@@ -8,13 +8,13 @@ const apiClient = axios.create({
     baseURL: JIKAN_BASE_URL,
 });
 
-export const searchAnime = async (query: string, page: number = 1) => {
+export const searchAnime = async (query: string, page: number = 1, limit: number = 24) => {
     try {
         const response = await apiClient.get('/anime', {
             params: {
                 q: query,
                 page,
-                limit: 20 // Default limit
+                limit
             }
         });
         return response.data;
@@ -34,12 +34,12 @@ export const getAnimeById = async (id: number) => {
     }
 };
 
-export const getTopAnime = async (page: number = 1) => {
+export const getTopAnime = async (page: number = 1, limit: number = 24) => {
     try {
         const response = await apiClient.get('/top/anime', {
             params: {
                 page,
-                limit: 20
+                limit
             }
         });
         return response.data;

@@ -44,7 +44,8 @@ function App() {
   const [searchLoading, setSearchLoading] = useState(false);
 
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [lastVisiblePage, setLastVisiblePage] = useState(1);
   const [error, setError] = useState<string | null>(null);
 
   // Watch State
@@ -89,50 +90,28 @@ function App() {
     const fetchTopAnime = async () => {
       try {
         setLoading(true);
-        const res = await fetch(`http://localhost:3001/api/jikan/top?page=1`);
+        const res = await fetch(`http://localhost:3001/api/jikan/top?page=${currentPage}&limit=24`);
         if (!res.ok) throw new Error('Failed to fetch');
         const data = await res.json();
 
-        const initialData = data.data.filter((item: Anime) => item.rank);
-        initialData.sort((a: Anime, b: Anime) => (a.rank || 0) - (b.rank || 0));
-
-        setTopAnime(initialData);
-        setLoading(false);
-
-        setLoadingMore(true);
-        let currentPage = 2;
-        let currentCount = initialData.length;
-
-        while (currentCount < 100 && currentPage <= 7) {
-          await new Promise(resolve => setTimeout(resolve, 600));
-          const res = await fetch(`http://localhost:3001/api/jikan/top?page=${currentPage}`);
-          if (!res.ok) {
-            currentPage++;
-            continue;
+        if (data && data.data) {
+          setTopAnime(data.data);
+          if (data.pagination) {
+            setLastVisiblePage(data.pagination.last_visible_page);
           }
-          const nextData = await res.json();
-
-          setTopAnime(prev => {
-            const combined = [...prev, ...nextData.data];
-            let unique = Array.from(new Map(combined.map(item => [item.mal_id, item])).values());
-            unique = unique.filter(item => item.rank);
-            unique.sort((a, b) => (a.rank || 0) - (b.rank || 0));
-            if (unique.length > 100) unique = unique.slice(0, 100);
-            currentCount = unique.length;
-            return unique;
-          });
-          currentPage++;
         }
       } catch (err) {
         console.error(err);
-        if (topAnime.length === 0) setError('Failed to load anime. Please try again later.');
+        setError('Failed to load anime. Please try again later.');
       } finally {
         setLoading(false);
-        setLoadingMore(false);
       }
     };
-    fetchTopAnime();
-  }, []);
+
+    if (!isSearching) {
+      fetchTopAnime();
+    }
+  }, [currentPage, isSearching]);
 
   useEffect(() => {
     if (selectedAnime) {
@@ -145,26 +124,38 @@ function App() {
     };
   }, [selectedAnime]);
 
+  useEffect(() => {
+    const performSearch = async () => {
+      setSearchLoading(true);
+      try {
+        const res = await fetch(`http://localhost:3001/api/jikan/search?q=${encodeURIComponent(searchQuery)}&page=${currentPage}&limit=24`);
+        const data = await res.json();
+        if (data && data.data) {
+          setSearchResults(data.data);
+          if (data.pagination) {
+            setLastVisiblePage(data.pagination.last_visible_page);
+          }
+        }
+      } catch (err) {
+        console.error("Search failed", err);
+      } finally {
+        setSearchLoading(false);
+      }
+    };
+
+    if (isSearching && searchQuery.trim()) {
+      performSearch();
+    }
+  }, [currentPage, isSearching, searchQuery]);
+
   const handleSearch = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!searchQuery.trim()) {
       setIsSearching(false);
       return;
     }
-
-    setSearchLoading(true);
+    setCurrentPage(1);
     setIsSearching(true);
-    try {
-      const res = await fetch(`http://localhost:3001/api/jikan/search?q=${encodeURIComponent(searchQuery)}`);
-      const data = await res.json();
-      if (data && data.data) {
-        setSearchResults(data.data);
-      }
-    } catch (err) {
-      console.error("Search failed", err);
-    } finally {
-      setSearchLoading(false);
-    }
   };
 
   const clearSearch = () => {
@@ -172,6 +163,7 @@ function App() {
     setIsSearching(false);
     setSearchResults([]);
     setSearchLoading(false);
+    setCurrentPage(1);
   };
 
   const handleAnimeClick = async (anime: Anime) => {
@@ -344,16 +336,51 @@ function App() {
           <>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
               {(isSearching ? searchResults : topAnime).map((anime, index) => (
-                <AnimeCard key={anime.mal_id} anime={{ ...anime, rank: isSearching ? anime.rank : (anime.rank || index + 1) }} onClick={handleAnimeClick} />
+                <AnimeCard key={anime.mal_id} anime={{ ...anime, rank: isSearching ? anime.rank : ((currentPage - 1) * 24 + index + 1) }} onClick={handleAnimeClick} />
               ))}
             </div>
-            {!isSearching && loadingMore && (
-              <div className="flex justify-center items-center py-8 gap-2">
-                <div className="w-2 h-2 bg-white rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                <div className="w-2 h-2 bg-white rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                <div className="w-2 h-2 bg-white rounded-full animate-bounce"></div>
-              </div>
-            )}
+
+            {/* Pagination UI */}
+            <div className="flex justify-center items-center mt-12 mb-8 gap-3">
+              {/* Sliding window pagination logic */}
+              {(() => {
+                const pages = [];
+                const startPage = Math.max(1, currentPage - 1);
+                const finalStart = Math.max(1, Math.min(startPage, lastVisiblePage - 2));
+
+                for (let i = finalStart; i <= Math.min(finalStart + 2, lastVisiblePage); i++) {
+                  pages.push(i);
+                }
+
+                return pages.map(pageNum => (
+                  <button
+                    key={pageNum}
+                    onClick={() => setCurrentPage(pageNum)}
+                    className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all ${currentPage === pageNum ? 'bg-[#ffb6d9] text-[#1a1c2c] shadow-lg shadow-pink-500/20' : 'bg-white/5 text-gray-400 hover:bg-white/10'}`}
+                  >
+                    {pageNum}
+                  </button>
+                ));
+              })()}
+
+              {currentPage < lastVisiblePage && (
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(lastVisiblePage, prev + 1))}
+                  className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:bg-white/10 transition-all font-bold"
+                >
+                  ›
+                </button>
+              )}
+              {currentPage < lastVisiblePage && (
+                <button
+                  onClick={() => setCurrentPage(lastVisiblePage)}
+                  className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:bg-white/10 transition-all font-bold"
+                >
+                  »
+                </button>
+              )}
+            </div>
+
             {isSearching && searchResults.length === 0 && !searchLoading && (
               <div className="text-center py-20 text-gray-500">
                 No anime found matching "{searchQuery}"
