@@ -34,8 +34,8 @@ export async function searchManga(query: string) {
 
     // Simple interleave or concatenate?
     // Concatenate for now, maybe prioritize MK?
-    // Let's return all.
-    return [...processedMK, ...processedAsura];
+    // Return all, prioritizing Asura
+    return [...processedAsura, ...processedMK];
 }
 
 /**

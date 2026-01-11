@@ -470,16 +470,18 @@ function App() {
         mangaId = mangaIdCache.current.get(manga.mal_id)!;
         console.log(`Using cached manga ID: ${mangaId}`);
       } else {
-        // Search for the manga on MangaKatana
-        console.log(`Searching for ${manga.title} on MangaKatana...`);
+        // Search for the manga on Scrapers (Asura, MangaKatana)
+        console.log(`Searching for ${manga.title} on Scrapers...`);
         const searchRes = await fetch(`http://localhost:3001/api/manga/search?q=${encodeURIComponent(manga.title)}`);
         const searchData = await searchRes.json();
 
         if (searchData?.data && searchData.data.length > 0) {
+          // TODO: Implement smarter matching or source preference
           mangaId = searchData.data[0].id;
+          console.log(`Found match: ${mangaId} (${searchData.data[0].source})`);
           mangaIdCache.current.set(manga.mal_id, mangaId);
         } else {
-          console.log('Manga not found on MangaKatana');
+          console.log('Manga not found on any scraper');
         }
       }
 
