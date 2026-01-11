@@ -10,7 +10,7 @@ interface Anime {
         };
     };
     score: number;
-    rank: number;
+    rank?: number;
     status: string;
     type: string;
     episodes: number | null;

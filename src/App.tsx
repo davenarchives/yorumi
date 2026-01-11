@@ -13,12 +13,19 @@ interface Anime {
     };
   };
   score: number;
-  rank: number;
+  rank?: number;
   status: string;
   type: string;
   episodes: number | null;
   year?: number;
   synopsis?: string;
+}
+
+interface Episode {
+  session: string;
+  episodeNumber: string;
+  duration?: string;
+  title?: string;
 }
 
 interface StreamLink {
@@ -42,9 +49,9 @@ function App() {
 
   // Watch State
   const [selectedAnime, setSelectedAnime] = useState<Anime | null>(null);
-  const [episodes, setEpisodes] = useState<any[]>([]);
+  const [episodes, setEpisodes] = useState<Episode[]>([]);
   const [scraperSession, setScraperSession] = useState<string | null>(null);
-  const [currentEpisode, setCurrentEpisode] = useState<any | null>(null);
+  const [currentEpisode, setCurrentEpisode] = useState<Episode | null>(null);
 
   const [streams, setStreams] = useState<StreamLink[]>([]);
   const [selectedStreamIndex, setSelectedStreamIndex] = useState<number>(0);
@@ -87,7 +94,7 @@ function App() {
         const data = await res.json();
 
         const initialData = data.data.filter((item: Anime) => item.rank);
-        initialData.sort((a: Anime, b: Anime) => a.rank - b.rank);
+        initialData.sort((a: Anime, b: Anime) => (a.rank || 0) - (b.rank || 0));
 
         setTopAnime(initialData);
         setLoading(false);
@@ -109,7 +116,7 @@ function App() {
             const combined = [...prev, ...nextData.data];
             let unique = Array.from(new Map(combined.map(item => [item.mal_id, item])).values());
             unique = unique.filter(item => item.rank);
-            unique.sort((a, b) => a.rank - b.rank);
+            unique.sort((a, b) => (a.rank || 0) - (b.rank || 0));
             if (unique.length > 100) unique = unique.slice(0, 100);
             currentCount = unique.length;
             return unique;
@@ -153,6 +160,7 @@ function App() {
     setSearchQuery('');
     setIsSearching(false);
     setSearchResults([]);
+    setSearchLoading(false);
   };
 
   const handleAnimeClick = async (anime: Anime) => {
@@ -212,7 +220,7 @@ function App() {
     return '360P';
   };
 
-  const loadStream = async (episode: any) => {
+  const loadStream = async (episode: Episode) => {
     if (!scraperSession) return;
     setCurrentEpisode(episode);
     setStreamLoading(true);
@@ -315,7 +323,7 @@ function App() {
           )}
         </div>
 
-        {(loading || searchLoading) && (isSearching ? searchResults.length === 0 : topAnime.length === 0) ? (
+        {searchLoading || (loading && topAnime.length === 0) ? (
           <div className="flex justify-center items-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
           </div>
@@ -325,7 +333,7 @@ function App() {
           <>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
               {(isSearching ? searchResults : topAnime).map((anime, index) => (
-                <AnimeCard key={anime.mal_id} anime={{ ...anime, rank: isSearching ? undefined : index + 1 }} onClick={handleAnimeClick} />
+                <AnimeCard key={anime.mal_id} anime={{ ...anime, rank: isSearching ? anime.rank : (anime.rank || index + 1) }} onClick={handleAnimeClick} />
               ))}
             </div>
             {!isSearching && loadingMore && (
@@ -367,7 +375,7 @@ function App() {
                     <div className="flex justify-center p-8"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-[#facc15]"></div></div>
                   ) : episodes.length > 0 ? (
                     <div className="space-y-1">
-                      {episodes.map((ep: any) => (
+                      {episodes.map((ep: Episode) => (
                         <div
                           key={ep.session}
                           onClick={() => loadStream(ep)}
