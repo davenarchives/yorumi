@@ -335,7 +335,7 @@ function App() {
         ) : (
           <>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
-              {(isSearching ? searchResults : topAnime).map((anime, index) => (
+              {(isSearching ? searchResults : topAnime.slice(0, (currentPage === 5 ? 4 : 24))).map((anime, index) => (
                 <AnimeCard key={anime.mal_id} anime={{ ...anime, rank: isSearching ? anime.rank : ((currentPage - 1) * 24 + index + 1) }} onClick={handleAnimeClick} />
               ))}
             </div>
@@ -363,11 +363,13 @@ function App() {
               {/* Sliding window pagination logic */}
               {(() => {
                 const pages = [];
+                const maxPage = isSearching ? lastVisiblePage : Math.min(lastVisiblePage, 5);
+
                 // Show 4 pages at a time as in the mockup
                 let start = Math.max(1, currentPage - 1);
-                if (start + 3 > lastVisiblePage) start = Math.max(1, lastVisiblePage - 3);
+                if (start + 3 > maxPage) start = Math.max(1, maxPage - 3);
 
-                for (let i = start; i <= Math.min(start + 3, lastVisiblePage); i++) {
+                for (let i = start; i <= Math.min(start + 3, maxPage); i++) {
                   pages.push(i);
                 }
 
@@ -383,16 +385,16 @@ function App() {
               })()}
 
               {/* Forward Buttons */}
-              {currentPage < lastVisiblePage && (
+              {currentPage < (isSearching ? lastVisiblePage : Math.min(lastVisiblePage, 5)) && (
                 <>
                   <button
-                    onClick={() => setCurrentPage(prev => Math.min(lastVisiblePage, prev + 1))}
+                    onClick={() => setCurrentPage(prev => Math.min(isSearching ? lastVisiblePage : 5, prev + 1))}
                     className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:bg-white/10 transition-all font-bold text-xs"
                   >
                     ›
                   </button>
                   <button
-                    onClick={() => setCurrentPage(lastVisiblePage)}
+                    onClick={() => setCurrentPage(isSearching ? lastVisiblePage : Math.min(lastVisiblePage, 5))}
                     className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:bg-white/10 transition-all font-bold text-xs"
                   >
                     »
