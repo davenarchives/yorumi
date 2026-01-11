@@ -48,3 +48,34 @@ export const getTopAnime = async (page: number = 1, limit: number = 24) => {
         throw error;
     }
 }
+
+export const getTopManga = async (page: number = 1, limit: number = 24) => {
+    try {
+        const response = await apiClient.get('/top/manga', {
+            params: {
+                page,
+                limit
+            }
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching top manga:', error);
+        throw error;
+    }
+}
+
+export const searchManga = async (query: string, page: number = 1, limit: number = 24) => {
+    try {
+        const response = await apiClient.get('/manga', {
+            params: {
+                q: query,
+                page,
+                limit
+            }
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error searching manga:', error);
+        throw error;
+    }
+}
