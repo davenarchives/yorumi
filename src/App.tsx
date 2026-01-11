@@ -20,6 +20,14 @@ interface Anime {
   year?: number;
 }
 
+interface StreamLink {
+  quality: string;
+  audio: string;
+  url: string;
+  directUrl?: string;
+  isHls: boolean;
+}
+
 function App() {
   const [topAnime, setTopAnime] = useState<Anime[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,8 +39,12 @@ function App() {
   const [episodes, setEpisodes] = useState<any[]>([]);
   const [scraperSession, setScraperSession] = useState<string | null>(null);
   const [currentEpisode, setCurrentEpisode] = useState<any | null>(null);
-  const [streamData, setStreamData] = useState<any | null>(null);
+
+  const [streams, setStreams] = useState<StreamLink[]>([]);
+  const [selectedStreamIndex, setSelectedStreamIndex] = useState<number>(0);
+  const [isAutoQuality, setIsAutoQuality] = useState(true);
   const [playerMode, setPlayerMode] = useState<'hls' | 'embed'>('embed');
+  const [showQualityMenu, setShowQualityMenu] = useState(false);
 
   const [epLoading, setEpLoading] = useState(false);
   const [streamLoading, setStreamLoading] = useState(false);
@@ -40,24 +52,25 @@ function App() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
 
+  const currentStream = streams[selectedStreamIndex] || null;
+
   useEffect(() => {
     // If we have directUrl and mode is HLS, setup hls.js
-    if (streamData?.directUrl && playerMode === 'hls' && videoRef.current) {
-      console.log("Setting up HLS player for:", streamData.directUrl);
+    if (currentStream?.directUrl && playerMode === 'hls' && videoRef.current) {
+      console.log("Setting up HLS player for:", currentStream.directUrl);
       if (Hls.isSupported()) {
         if (hlsRef.current) hlsRef.current.destroy();
         const hls = new Hls({
-          // Kwik sometimes needs correct referer, hls.js can't set it for chunks easily 
-          // but let's try standard config first
+          capLevelToPlayerSize: true, // Help with "auto" if it's a master playlist
         });
-        hls.loadSource(streamData.directUrl);
+        hls.loadSource(currentStream.directUrl);
         hls.attachMedia(videoRef.current);
         hlsRef.current = hls;
       } else if (videoRef.current.canPlayType('application/vnd.apple.mpegurl')) {
-        videoRef.current.src = streamData.directUrl;
+        videoRef.current.src = currentStream.directUrl;
       }
     }
-  }, [streamData, playerMode]);
+  }, [currentStream, playerMode]);
 
   useEffect(() => {
     const fetchTopAnime = async () => {
@@ -113,7 +126,7 @@ function App() {
     setEpLoading(true);
     setEpisodes([]);
     setCurrentEpisode(null);
-    setStreamData(null);
+    setStreams([]);
     setScraperSession(null);
 
     try {
@@ -149,20 +162,44 @@ function App() {
     }
   };
 
+  const getMappedQuality = (q: string): string => {
+    const res = parseInt(q);
+    if (res >= 1000) return '1080P';
+    if (res >= 600) return '720P';
+    return '360P';
+  };
+
   const loadStream = async (episode: any) => {
     if (!scraperSession) return;
     setCurrentEpisode(episode);
     setStreamLoading(true);
-    setStreamData(null);
+    setStreams([]);
+    setSelectedStreamIndex(0);
+    setIsAutoQuality(true);
 
     try {
       const res = await fetch(`http://localhost:3001/api/scraper/streams?anime_session=${scraperSession}&ep_session=${episode.session}`);
       const data = await res.json();
 
       if (data && data.length > 0) {
-        setStreamData(data[0]);
-        // Default to embed if directUrl might be unstable, or just use what's available
-        if (!data[0].directUrl) setPlayerMode('embed');
+        // Map and deduplicate to strict AUTO/360P/720P/1080P
+        const qualityMap = new Map<string, StreamLink>();
+
+        // Sort original data by raw quality desc first so we pick the best for each bucket
+        const sortedData = [...data].sort((a: StreamLink, b: StreamLink) => (parseInt(b.quality) || 0) - (parseInt(a.quality) || 0));
+
+        sortedData.forEach((s: StreamLink) => {
+          const mapped = getMappedQuality(s.quality);
+          if (!qualityMap.has(mapped)) {
+            qualityMap.set(mapped, s);
+          }
+        });
+
+        // Convert back to array (1080P, 720P, 360P)
+        const standardizedStreams = Array.from(qualityMap.values());
+        setStreams(standardizedStreams);
+
+        if (!standardizedStreams[0].directUrl) setPlayerMode('embed');
       } else {
         console.log("No streams found");
       }
@@ -173,11 +210,23 @@ function App() {
     }
   };
 
+  const handleQualityChange = (index: number) => {
+    setSelectedStreamIndex(index);
+    setIsAutoQuality(false);
+    setShowQualityMenu(false);
+  };
+
+  const setAutoQuality = () => {
+    setIsAutoQuality(true);
+    setSelectedStreamIndex(0); // Highest by default
+    setShowQualityMenu(false);
+  };
+
   const closeDetails = () => {
     setSelectedAnime(null);
     setEpisodes([]);
     setCurrentEpisode(null);
-    setStreamData(null);
+    setStreams([]);
     if (hlsRef.current) {
       hlsRef.current.destroy();
       hlsRef.current = null;
@@ -267,9 +316,43 @@ function App() {
               </div>
 
               <div className="flex-1 bg-black flex flex-col relative">
-                {streamData && (
+                {currentStream && (
                   <div className="absolute top-4 right-4 z-10 flex gap-2">
-                    {streamData.directUrl && (
+                    {/* Quality Menu Toggle */}
+                    <div className="relative">
+                      <button
+                        onClick={() => setShowQualityMenu(!showQualityMenu)}
+                        className="px-3 py-1 flex items-center gap-1.5 rounded-full text-xs font-bold bg-white/10 text-white hover:bg-white/20 transition-colors"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3 h-3">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0m-9.75 0h9.75" />
+                        </svg>
+                        {isAutoQuality ? 'AUTO' : getMappedQuality(currentStream.quality)}
+                      </button>
+
+                      {showQualityMenu && (
+                        <div className="absolute right-0 mt-2 p-2 w-28 bg-[#1a1a1a] rounded-lg shadow-2xl border border-white/10 flex flex-col gap-1 z-20">
+                          <h4 className="px-2 py-1 text-[10px] font-bold text-gray-500 uppercase">Quality</h4>
+                          {streams.map((s, idx) => (
+                            <button
+                              key={idx}
+                              onClick={() => handleQualityChange(idx)}
+                              className={`px-3 py-1.5 text-xs text-left rounded transition-colors ${!isAutoQuality && selectedStreamIndex === idx ? 'bg-white text-black font-bold' : 'hover:bg-white/5 text-gray-300'}`}
+                            >
+                              {getMappedQuality(s.quality)}
+                            </button>
+                          ))}
+                          <button
+                            onClick={setAutoQuality}
+                            className={`px-3 py-1.5 text-xs text-left rounded transition-colors ${isAutoQuality ? 'bg-white text-black font-bold' : 'hover:bg-white/5 text-gray-300'}`}
+                          >
+                            AUTO
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {currentStream.directUrl && (
                       <button
                         onClick={() => setPlayerMode('hls')}
                         className={`px-3 py-1 rounded-full text-xs font-bold transition-colors ${playerMode === 'hls' ? 'bg-[#facc15] text-black' : 'bg-white/10 text-white hover:bg-white/20'}`}
@@ -292,12 +375,12 @@ function App() {
                       <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#facc15]"></div>
                       <p className="text-gray-400 animate-pulse">Loading stream...</p>
                     </div>
-                  ) : streamData ? (
-                    playerMode === 'hls' && streamData.directUrl ? (
+                  ) : currentStream ? (
+                    playerMode === 'hls' && currentStream.directUrl ? (
                       <video ref={videoRef} controls className="w-full h-full" autoPlay />
                     ) : (
                       <iframe
-                        src={streamData.url}
+                        src={currentStream.url}
                         className="w-full h-full"
                         allowFullScreen
                         allow="autoplay; encrypted-media"
@@ -319,16 +402,16 @@ function App() {
 
               <div className="w-80 bg-[#111] border-l border-white/5 overflow-y-auto hidden xl:block p-6 space-y-6">
                 <div className="aspect-[2/3] rounded-lg overflow-hidden shadow-lg">
-                  <img src={selectedAnime.images.jpg.large_image_url} alt={selectedAnime.title} className="w-full h-full object-cover" />
+                  <img src={selectedAnime?.images.jpg.large_image_url} alt={selectedAnime?.title} className="w-full h-full object-cover" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold leading-tight mb-2">{selectedAnime.title}</h1>
+                  <h1 className="text-xl font-bold leading-tight mb-2">{selectedAnime?.title}</h1>
                   <div className="flex flex-wrap gap-2 text-xs">
-                    <span className="px-2 py-1 bg-white/10 rounded">{selectedAnime.type}</span>
-                    <span className="px-2 py-1 bg-white/10 rounded">{selectedAnime.year}</span>
+                    <span className="px-2 py-1 bg-white/10 rounded">{selectedAnime?.type}</span>
+                    <span className="px-2 py-1 bg-white/10 rounded">{selectedAnime?.year}</span>
                     <span className="px-2 py-1 bg-[#facc15] text-black font-bold rounded flex items-center gap-1">
                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3"><path fillRule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clipRule="evenodd" /></svg>
-                      {selectedAnime.score}
+                      {selectedAnime?.score}
                     </span>
                   </div>
                 </div>
