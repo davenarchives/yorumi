@@ -9,27 +9,57 @@ export function useSearch(activeTab: 'anime' | 'manga') {
     const [searchResults, setSearchResults] = useState<(Anime | Manga)[]>([]);
     const [isSearching, setIsSearching] = useState(false);
     const [searchLoading, setSearchLoading] = useState(false);
+    const [searchPagination, setSearchPagination] = useState({
+        last_visible_page: 1,
+        current_page: 1,
+        has_next_page: false
+    });
+
+    const performSearch = async (query: string, page: number, isLoadMore: boolean = false) => {
+        setSearchLoading(true);
+        if (!isLoadMore) setIsSearching(true);
+
+        try {
+            let newData: any;
+            if (activeTab === 'anime') {
+                newData = await animeService.searchAnime(query, page);
+            } else {
+                newData = await mangaService.searchManga(query, page);
+            }
+
+            if (isLoadMore) {
+                setSearchResults(prev => [...prev, ...(newData?.data || [])]);
+            } else {
+                setSearchResults(newData?.data || []);
+            }
+
+            if (newData?.pagination) setSearchPagination(newData.pagination);
+        } catch (err) {
+            console.error('Search failed:', err);
+            if (!isLoadMore) setSearchResults([]);
+        } finally {
+            setSearchLoading(false);
+        }
+    };
 
     const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!searchQuery.trim()) return;
 
-        setSearchLoading(true);
-        setIsSearching(true);
+        // Reset pagination before searching
+        setSearchPagination({
+            last_visible_page: 1,
+            current_page: 1,
+            has_next_page: false
+        });
 
-        try {
-            if (activeTab === 'anime') {
-                const data = await animeService.searchAnime(searchQuery);
-                setSearchResults(data?.data || []);
-            } else {
-                const data = await mangaService.searchManga(searchQuery);
-                setSearchResults(data?.data || []);
-            }
-        } catch (err) {
-            console.error('Search failed:', err);
-            setSearchResults([]);
-        } finally {
-            setSearchLoading(false);
+        performSearch(searchQuery, 1, false);
+    };
+
+    const loadMore = () => {
+        if (!searchLoading && searchPagination.has_next_page) {
+            const nextPage = searchPagination.current_page + 1;
+            performSearch(searchQuery, nextPage, true);
         }
     };
 
@@ -47,5 +77,7 @@ export function useSearch(activeTab: 'anime' | 'manga') {
         setSearchQuery,
         handleSearch,
         clearSearch,
+        searchPagination,
+        loadMore
     };
 }
