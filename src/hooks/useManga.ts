@@ -77,12 +77,6 @@ export function useManga() {
         }
     };
 
-
-
-    const startReading = () => {
-        setShowMangaDetails(false);
-    };
-
     const loadMangaChapter = async (chapter: MangaChapter) => {
         setCurrentMangaChapter(chapter);
         setMangaPagesLoading(true);
@@ -114,13 +108,44 @@ export function useManga() {
         }
     };
 
+    // History Management
+    useEffect(() => {
+        const onPopState = () => {
+            if (currentMangaChapter) {
+                // If reading a chapter, close reader
+                setCurrentMangaChapter(null);
+                setChapterPages([]);
+            } else if (showMangaDetails) {
+                // If viewing details, close details
+                setShowMangaDetails(false);
+                setSelectedManga(null);
+            }
+        };
+
+        window.addEventListener('popstate', onPopState);
+        return () => window.removeEventListener('popstate', onPopState);
+    }, [currentMangaChapter, showMangaDetails]);
+
+    const handleMangaClickWithHistory = async (manga: Manga) => {
+        window.history.pushState({ modal: 'manga_details', id: manga.mal_id }, '', `#manga/${manga.mal_id}`);
+        await handleMangaClick(manga);
+    };
+
+    const loadMangaChapterWithHistory = async (chapter: MangaChapter) => {
+        window.history.pushState({ modal: 'manga_reader' }, '', `#read/${selectedManga?.mal_id}/${chapter.id}`);
+        loadMangaChapter(chapter);
+    };
+
     const closeMangaReader = () => {
-        setSelectedManga(null);
+        // This function handles closing BOTH details and reader modals via UI buttons
+        // So we just go back in history if any modal is open
+        if (showMangaDetails || currentMangaChapter) {
+            window.history.back();
+        }
+    };
+
+    const startReading = () => {
         setShowMangaDetails(false);
-        setMangaChapters([]);
-        setCurrentMangaChapter(null);
-        setChapterPages([]);
-        setChapterSearchQuery('');
     };
 
     const zoomIn = () => setZoomLevel(prev => Math.min(prev + 10, 100));
@@ -149,9 +174,9 @@ export function useManga() {
 
         // Actions
         setChapterSearchQuery,
-        handleMangaClick,
+        handleMangaClick: handleMangaClickWithHistory,
         startReading,
-        loadMangaChapter,
+        loadMangaChapter: loadMangaChapterWithHistory,
         prefetchChapter,
         closeMangaReader,
         zoomIn,
