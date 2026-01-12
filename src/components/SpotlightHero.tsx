@@ -62,10 +62,8 @@ const SpotlightHero: React.FC<SpotlightHeroProps> = ({ animeList, onAnimeClick }
                         // We prioritize AniList Banner. If missing, we use other landscape options.
                         // We avoid using 'anilist_cover_image' (portrait) for the hero background directly.
                         const landscapeImage = anime.anilist_banner_image ??
-                            anime.trailer?.images?.maximum_image_url ??
-                            anime.trailer?.images?.large_image_url ??
-                            anime.trailer?.images?.medium_image_url ??
-                            // Fallback to standard images if absolutely nothing else, but usually better to have even a low res landscape than a high res portrait stretched
+                            anime.trailer?.thumbnail ??
+                            // Fallback to standard images if no banner/trailer available
                             anime.images?.jpg?.large_image_url ??
                             anime.images?.jpg?.image_url;
 
