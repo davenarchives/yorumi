@@ -191,6 +191,19 @@ export async function scrapeDetails(id: number, type: 'anime' | 'manga'): Promis
         const rawImg = imgEl.attr('data-src') || imgEl.attr('src') || '';
         const images = processImageUrl(rawImg);
 
+        const genres: { mal_id: number; name: string; }[] = [];
+        $('span.dark_text:contains("Genres:")').parent().find('a').each((_, el) => {
+            const name = $(el).text().trim();
+            const href = $(el).attr('href');
+            const id = extractIdFromUrl(href);
+            if (name && id) {
+                genres.push({ mal_id: id, name });
+            }
+        });
+
+        // Also try "Themes" or "Demographic" if desired, but user asked for Genres.
+        // Sometimes MAL splits them. Let's stick to "Genres:" first.
+
         return {
             mal_id: id,
             title,
@@ -198,7 +211,8 @@ export async function scrapeDetails(id: number, type: 'anime' | 'manga'): Promis
             score,
             synopsis,
             type: type === 'anime' ? 'TV' : 'Manga',
-            status: 'Finished Airing'
+            status: 'Finished Airing', // TODO: Scrape actual status
+            genres
         };
     } catch (error) {
         console.error(`Error scraping MAL details for ${id}:`, error);

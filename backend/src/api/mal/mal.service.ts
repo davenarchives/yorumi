@@ -81,6 +81,16 @@ export const getTopManga = async (page: number = 1, limit: number = 24) => {
     }
 }
 
+export const getMangaById = async (id: number) => {
+    try {
+        const data = await malScraper.scrapeDetails(id, 'manga');
+        return { data };
+    } catch (error) {
+        console.error(`Error fetching manga with ID ${id}:`, error);
+        throw error;
+    }
+};
+
 export const searchManga = async (query: string, page: number = 1, limit: number = 24) => {
     try {
         const startIndex = (page - 1) * limit;

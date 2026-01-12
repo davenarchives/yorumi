@@ -59,7 +59,7 @@ router.get('/chapters/:mangaId', async (req: Request, res: Response) => {
         }
 
         const chapters = await mangaService.getChapterList(mangaId);
-        res.json({ data: chapters });
+        res.json({ chapters: chapters });
     } catch (error) {
         console.error('Chapters list error:', error);
         res.status(500).json({ error: 'Failed to fetch chapter list' });
@@ -80,7 +80,7 @@ router.get('/pages', async (req: Request, res: Response) => {
         }
 
         const pages = await mangaService.getChapterPages(chapterUrl);
-        res.json({ data: pages });
+        res.json({ pages: pages });
     } catch (error) {
         console.error('Chapter pages error:', error);
         res.status(500).json({ error: 'Failed to fetch chapter pages' });

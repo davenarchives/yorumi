@@ -14,6 +14,13 @@ export interface Manga {
     chapters: number | null;
     volumes: number | null;
     synopsis?: string;
+    genres?: { mal_id: number; name: string; }[];
+    authors?: { mal_id: number; name: string; }[];
+    published?: {
+        from?: string;
+        to?: string;
+        string?: string;
+    };
 }
 
 export interface MangaChapter {

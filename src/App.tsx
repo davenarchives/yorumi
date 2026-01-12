@@ -16,6 +16,7 @@ import MangaCard from './components/MangaCard';
 import AnimeDetailsModal from './components/modals/AnimeDetailsModal';
 import WatchModal from './components/modals/WatchModal';
 import MangaReaderModal from './components/modals/MangaReaderModal';
+import MangaDetailsModal from './components/modals/MangaDetailsModal';
 
 // Utils
 import { scrollUtils } from './utils/scrollUtils';
@@ -146,6 +147,14 @@ function App() {
         onWatchNow={anime.startWatching}
       />
 
+      {/* Manga Details Modal */}
+      <MangaDetailsModal
+        isOpen={manga.showMangaDetails && !!manga.selectedManga}
+        manga={manga.selectedManga!}
+        onClose={manga.closeMangaReader}
+        onReadNow={manga.startReading}
+      />
+
       <WatchModal
         isOpen={anime.showWatchModal && !!anime.selectedAnime}
         anime={anime.selectedAnime!}
@@ -172,7 +181,7 @@ function App() {
         getMappedQuality={streams.getMappedQuality}
       />
       {/* Manga Reader Modal */}
-      {manga.selectedManga && (
+      {manga.selectedManga && !manga.showMangaDetails && (
         <MangaReaderModal
           isOpen={!!manga.selectedManga}
           manga={manga.selectedManga}

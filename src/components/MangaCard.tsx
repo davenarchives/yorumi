@@ -47,7 +47,7 @@ const MangaCard: React.FC<MangaCardProps> = ({ manga, onClick }) => {
             <div className="p-4">
                 <div className="flex justify-between items-start mb-2">
                     <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">{manga.type || 'Manga'}</span>
-                    {manga.rank && <span className="text-xs font-bold text-[#facc15] tracking-wider">RANK #{manga.rank}</span>}
+                    {!!manga.rank && <span className="text-xs font-bold text-[#facc15] tracking-wider">RANK #{manga.rank}</span>}
                 </div>
 
                 <h3 className="text-white font-semibold text-sm line-clamp-2 mb-3 h-10 leading-tight" title={manga.title}>

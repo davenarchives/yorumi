@@ -43,15 +43,27 @@ export default function AnimeDetailsModal({ isOpen, anime, onClose, onWatchNow }
                         <div className="flex-1 space-y-6">
                             <div className="flex flex-wrap gap-2">
                                 <span className="px-3 py-1 bg-white/10 rounded text-sm">{anime.type}</span>
-                                {anime.rating && <span className="px-3 py-1 bg-purple-900/30 text-purple-400 rounded text-sm">{anime.rating}</span>}
-                                {anime.episodes && <span className="px-3 py-1 bg-blue-900/30 text-blue-400 rounded text-sm">{anime.episodes} Episodes</span>}
+                                <span className="px-3 py-1 bg-blue-900/30 text-blue-400 rounded text-sm">{anime.episodes || '?'} EPISODES</span>
                                 <span className="px-3 py-1 bg-[#facc15] text-black font-bold rounded text-sm flex items-center gap-1">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
                                         <path fillRule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clipRule="evenodd" />
                                     </svg>
-                                    {anime.score}
+                                    {anime.score?.toFixed(2)}
                                 </span>
+                                {anime.rating && <span className="px-3 py-1 bg-purple-900/30 text-purple-400 rounded text-sm">{anime.rating}</span>}
                             </div>
+                            {anime.genres && anime.genres.length > 0 && (
+                                <div className="mb-6">
+                                    <h4 className="text-xs text-gray-500 uppercase mb-2">Genres</h4>
+                                    <div className="flex flex-wrap gap-2">
+                                        {anime.genres.map(genre => (
+                                            <span key={genre.mal_id} className="px-3 py-1 bg-white/5 hover:bg-white/10 rounded text-sm transition-colors cursor-pointer text-gray-300">
+                                                {genre.name}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                             <div className="grid grid-cols-2 gap-4">
                                 {anime.aired?.string && (
                                     <div>
@@ -76,18 +88,7 @@ export default function AnimeDetailsModal({ isOpen, anime, onClose, onWatchNow }
                                     <p className={`text-sm ${anime.status === 'Currently Airing' ? 'text-green-400' : ''}`}>{anime.status}</p>
                                 </div>
                             </div>
-                            {anime.genres && anime.genres.length > 0 && (
-                                <div>
-                                    <h4 className="text-xs text-gray-500 uppercase mb-2">Genres</h4>
-                                    <div className="flex flex-wrap gap-2">
-                                        {anime.genres.map(genre => (
-                                            <span key={genre.mal_id} className="px-3 py-1 bg-white/5 hover:bg-white/10 rounded text-sm transition-colors cursor-pointer">
-                                                {genre.name}
-                                            </span>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
+
                             {anime.studios && anime.studios.length > 0 && (
                                 <div>
                                     <h4 className="text-xs text-gray-500 uppercase mb-1">Studios</h4>

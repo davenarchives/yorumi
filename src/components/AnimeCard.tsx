@@ -46,7 +46,7 @@ const AnimeCard: React.FC<AnimeCardProps> = ({ anime, onClick }) => {
             <div className="p-4">
                 <div className="flex justify-between items-start mb-2">
                     <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">{anime.type || 'TV'}</span>
-                    {anime.rank && <span className="text-xs font-bold text-[#facc15] tracking-wider">RANK #{anime.rank}</span>}
+                    {!!anime.rank && <span className="text-xs font-bold text-[#facc15] tracking-wider">RANK #{anime.rank}</span>}
                 </div>
 
                 <h3 className="text-white font-semibold text-sm line-clamp-2 mb-3 h-10 leading-tight" title={anime.title}>

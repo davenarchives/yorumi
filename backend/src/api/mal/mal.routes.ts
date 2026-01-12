@@ -36,6 +36,21 @@ router.get('/anime/:id', async (req: Request, res: Response) => {
     }
 });
 
+router.get('/manga/:id', async (req: Request, res: Response) => {
+    try {
+        const id = parseInt(req.params.id);
+        if (isNaN(id)) {
+            res.status(400).json({ error: 'Invalid ID' });
+            return;
+        }
+
+        const data = await malService.getMangaById(id);
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
 router.get('/top', async (req: Request, res: Response) => {
     try {
         const page = req.query.page ? parseInt(req.query.page as string) : 1;
