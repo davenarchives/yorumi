@@ -1,0 +1,210 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import useEmblaCarousel from 'embla-carousel-react';
+import Autoplay from 'embla-carousel-autoplay';
+import type { Anime } from '../types/anime';
+
+interface SpotlightHeroProps {
+    animeList: Anime[];
+    onAnimeClick: (anime: Anime) => void;
+}
+
+const SpotlightHero: React.FC<SpotlightHeroProps> = ({ animeList, onAnimeClick }) => {
+    // Embla Carousel hook with Autoplay
+    const [emblaRef, emblaApi] = useEmblaCarousel({
+        loop: true,
+        duration: 20
+    }, [
+        Autoplay({ delay: 5000, stopOnInteraction: false, stopOnMouseEnter: false })
+    ]);
+    const [selectedIndex, setSelectedIndex] = useState(0);
+
+    // Update selected index when slide changes
+    const onSelect = useCallback(() => {
+        if (!emblaApi) return;
+        setSelectedIndex(emblaApi.selectedScrollSnap());
+    }, [emblaApi]);
+
+    // Attach event listener
+    useEffect(() => {
+        if (!emblaApi) return;
+        onSelect();
+        emblaApi.on('select', onSelect);
+        return () => {
+            emblaApi.off('select', onSelect);
+        };
+    }, [emblaApi, onSelect]);
+
+    const handleNext = useCallback(() => {
+        if (emblaApi) emblaApi.scrollNext();
+    }, [emblaApi]);
+
+    const handlePrev = useCallback(() => {
+        if (emblaApi) emblaApi.scrollPrev();
+    }, [emblaApi]);
+
+    const scrollTo = useCallback((index: number) => {
+        if (emblaApi) emblaApi.scrollTo(index);
+    }, [emblaApi]);
+
+    if (animeList.length === 0) return null;
+
+    return (
+        <div
+            className="relative w-full h-[75vh] min-h-[400px] group bg-[#0a0a0a] overflow-hidden"
+        >
+            {/* Embla Viewport */}
+            <div className="absolute inset-0 overflow-hidden" ref={emblaRef}>
+                <div className="flex h-full touch-pan-y">
+                    {animeList.map((anime, index) => {
+                        // Logic to choose the best landscape image
+                        // Logic to choose the best landscape image
+                        // User reported "weird" images, likely due to using portrait covers as background
+                        // We prioritize AniList Banner. If missing, we use other landscape options.
+                        // We avoid using 'anilist_cover_image' (portrait) for the hero background directly.
+                        const landscapeImage = anime.anilist_banner_image ??
+                            anime.trailer?.images?.maximum_image_url ??
+                            anime.trailer?.images?.large_image_url ??
+                            anime.trailer?.images?.medium_image_url ??
+                            // Fallback to standard images if absolutely nothing else, but usually better to have even a low res landscape than a high res portrait stretched
+                            anime.images?.jpg?.large_image_url ??
+                            anime.images?.jpg?.image_url;
+
+                        return (
+                            <div key={anime.mal_id} className="relative min-w-full h-full flex-[0_0_100%]">
+                                {/* Background Image */}
+                                <div className="absolute inset-0 z-0 select-none">
+                                    <div
+                                        className="absolute inset-0 bg-no-repeat bg-cover bg-center"
+                                        style={{
+                                            backgroundImage: `url(${landscapeImage})`,
+                                            maskImage: 'linear-gradient(to right, transparent 0%, transparent 5%, black 60%)',
+                                            WebkitMaskImage: 'linear-gradient(to right, transparent 0%, transparent 5%, black 60%)'
+                                        }}
+                                    />
+                                    {/* Overlay */}
+                                    <div className="absolute inset-0 bg-gradient-to-r from-[#0a0a0a] via-[#0a0a0a]/40 to-transparent pointer-events-none" />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-transparent to-transparent pointer-events-none" />
+                                </div>
+
+                                {/* Content */}
+                                <div className="absolute inset-0 flex items-center px-8 md:px-14 pt-32 md:pt-48 pb-8 md:pb-14 z-10 pointer-events-none">
+                                    <div className="w-full md:w-2/3 lg:w-1/2 pointer-events-auto pr-4 select-text">
+                                        <div className="text-[#d886ff] font-bold tracking-wider text-base mb-3 select-none">
+                                            #{index + 1} Spotlight
+                                        </div>
+                                        {/* Dynamic font size based on title length to ensure it fits and isn't truncated */}
+                                        <h1 className={`${anime.title.length > 50 ? 'text-xl md:text-2xl lg:text-3xl' :
+                                            anime.title.length > 30 ? 'text-2xl md:text-3xl lg:text-4xl' :
+                                                'text-2xl md:text-4xl lg:text-5xl'
+                                            } font-black text-white mb-4 leading-[1.1] drop-shadow-lg select-none`}>
+                                            {anime.title}
+                                        </h1>
+
+                                        <div className="flex items-center flex-wrap gap-5 text-sm text-white mb-8 font-medium select-none">
+                                            <span className="flex items-center gap-1.5">
+                                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                                                {anime.type || 'TV'}
+                                            </span>
+                                            <span className="flex items-center gap-1.5">
+                                                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                                {anime.duration?.split(' ')[0] || '24m'}
+                                            </span>
+                                            <span className="flex items-center gap-1.5">
+                                                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                                {anime.aired?.string?.split(',')[1]?.trim() || anime.year || 'Jan 9, 2026'}
+                                            </span>
+
+                                            <div className="flex gap-2 ml-1 items-center">
+                                                {/* HD Badge */}
+                                                <span className="bg-[#d886ff] text-yorumi-bg px-2.5 py-1 rounded text-xs font-bold">HD</span>
+
+                                                {/* CC / Episodes Badge - show latestEpisode for ongoing, episodes for completed */}
+                                                {(anime.latestEpisode || anime.episodes) && (
+                                                    <span className="bg-[#22c55e] text-white px-2.5 py-1 rounded text-xs font-bold flex items-center gap-1">
+                                                        <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M19 4H5a2 2 0 00-2 2v12a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2zm-8 7H9.5v-.5h-2v3h2V13H11v2H6V9h5v2zm7 0h-1.5v-.5h-2v3h2V13H18v2h-5V9h5v2z" /></svg>
+                                                        {anime.latestEpisode || anime.episodes}
+                                                    </span>
+                                                )}
+
+                                                {/* Score/Rating Badge */}
+                                                {anime.score > 0 && (
+                                                    <span className="bg-[#facc15] text-black px-2.5 py-1 rounded text-xs font-bold flex items-center gap-1">
+                                                        <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" /></svg>
+                                                        {anime.score.toFixed(1)}
+                                                    </span>
+                                                )}
+
+                                                {/* Age Rating (e.g. R-17+) - Optional but nice to have if available */}
+                                                {anime.rating && anime.rating !== 'Unknown' && (
+                                                    <span className="bg-white/10 text-gray-300 border border-white/10 px-2 py-0.5 rounded-[4px] text-xs font-medium ml-1">
+                                                        {anime.rating.split(' ')[0]}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <p className="text-gray-300 mb-10 line-clamp-3 text-base leading-relaxed max-w-xl pr-12 select-none">
+                                            {anime.synopsis || "No synopsis available."}
+                                        </p>
+                                    </div>
+
+                                    {/* Buttons - Absolute Positioned for consistency */}
+                                    <div className="absolute bottom-12 left-8 md:left-14 flex gap-4 pointer-events-auto z-20">
+                                        <button
+                                            onClick={() => onAnimeClick(anime)}
+                                            className="bg-yorumi-accent text-yorumi-bg px-8 py-3.5 rounded-full font-bold hover:bg-white transition-all duration-300 transform hover:scale-105 flex items-center gap-3 shadow-[0_0_20px_rgba(253,200,73,0.3)] hover:shadow-[0_0_30px_rgba(253,200,73,0.6)]"
+                                        >
+                                            <div className="bg-yorumi-bg text-white rounded-full p-1.5 -ml-2">
+                                                <svg className="w-3 h-3 ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                                            </div>
+                                            Watch Now
+                                        </button>
+                                        <button
+                                            onClick={() => onAnimeClick(anime)}
+                                            className="bg-white/10 backdrop-blur-md border border-white/20 text-white px-8 py-3.5 rounded-full font-bold hover:bg-white/20 transition-all duration-300 flex items-center gap-2"
+                                        >
+                                            Detail <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+
+            {/* Navigation Buttons (Bottom Right) */}
+            <div className="absolute bottom-8 right-8 z-20 flex gap-2">
+                <button
+                    onClick={handlePrev}
+                    className="p-3 bg-black/60 hover:bg-yorumi-accent hover:text-yorumi-bg text-white rounded-lg border border-white/10 transition-all backdrop-blur-md"
+                    aria-label="Previous Slide"
+                >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                </button>
+                <button
+                    onClick={handleNext}
+                    className="p-3 bg-black/60 hover:bg-yorumi-accent hover:text-yorumi-bg text-white rounded-lg border border-white/10 transition-all backdrop-blur-md"
+                    aria-label="Next Slide"
+                >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                </button>
+            </div>
+
+            {/* Dots Indicator */}
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+                {animeList.map((_, idx) => (
+                    <button
+                        key={idx}
+                        onClick={() => scrollTo(idx)}
+                        className={`w-2 h-2 rounded-full transition-all duration-300 ${idx === selectedIndex ? 'bg-yorumi-accent w-6' : 'bg-white/30 hover:bg-white/50'
+                            }`}
+                        aria-label={`Go to slide ${idx + 1}`}
+                    />
+                ))}
+            </div>
+        </div>
+    );
+};
+
+export default SpotlightHero;

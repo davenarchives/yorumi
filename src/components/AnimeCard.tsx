@@ -1,70 +1,131 @@
 import React from 'react';
-
-interface Anime {
-    mal_id: number;
-    title: string;
-    images: {
-        jpg: {
-            image_url: string;
-            large_image_url: string;
-        };
-    };
-    score: number;
-    rank?: number;
-    status: string;
-    type: string;
-    episodes: number | null;
-}
+import type { Anime } from '../types/anime';
 
 interface AnimeCardProps {
     anime: Anime;
     onClick: (anime: Anime) => void;
+    onWatchClick?: (anime: Anime) => void;
 }
 
-const AnimeCard: React.FC<AnimeCardProps> = ({ anime, onClick }) => {
+const AnimeCard: React.FC<AnimeCardProps> = ({ anime, onClick, onWatchClick }) => {
+    // Get episode count - prefer latestEpisode for ongoing anime
+    const episodeCount = anime.latestEpisode || anime.episodes;
+
     return (
-        <div onClick={() => onClick(anime)} className="group relative bg-[#1a1a1a] rounded-lg overflow-hidden transition-transform duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-black/50 cursor-pointer">
+        <div className="select-none cursor-pointer group relative">
             {/* Image Container */}
-            <div className="relative aspect-[2/3] overflow-hidden">
+            <div className="relative aspect-[2/3] rounded-lg overflow-hidden mb-3 shadow-lg transition-transform duration-300 group-hover:scale-[1.02]">
                 <img
                     src={anime.images.jpg.large_image_url || anime.images.jpg.image_url}
                     alt={anime.title}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    className="w-full h-full object-cover"
                     loading="lazy"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-                {/* Hover Overlay Content */}
-                <div className="absolute bottom-0 left-0 p-4 w-full translate-y-4 group-hover:translate-y-0 transition-transform duration-300 opacity-0 group-hover:opacity-100">
-                    <button className="w-full py-2 bg-white text-black font-semibold rounded-md hover:bg-gray-200 transition-colors">
-                        View Details
-                    </button>
-                </div>
-            </div>
+                {/* Default Badges - Always Visible */}
+                {/* Top Right: Star Rating */}
+                {anime.score > 0 && (
+                    <div className="absolute top-2 right-2 group-hover:opacity-0 transition-opacity duration-300">
+                        <span className="bg-[#facc15] text-black px-2 py-1 rounded text-xs font-bold flex items-center gap-1">
+                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" /></svg>
+                            {anime.score.toFixed(1)}
+                        </span>
+                    </div>
+                )}
 
-            {/* Info Container */}
-            <div className="p-4">
-                <div className="flex justify-between items-start mb-2">
-                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">{anime.type || 'TV'}</span>
-                    {!!anime.rank && <span className="text-xs font-bold text-[#facc15] tracking-wider">RANK #{anime.rank}</span>}
-                </div>
-
-                <h3 className="text-white font-semibold text-sm line-clamp-2 mb-3 h-10 leading-tight" title={anime.title}>
-                    {anime.title}
-                </h3>
-
-                <div className="flex justify-between items-center text-xs text-gray-400">
-                    <span className={`px-2 py-1 rounded-sm ${anime.status === 'Currently Airing' ? 'bg-green-900/30 text-green-400' : 'bg-gray-800'} font-medium uppercase tracking-wide`}>
-                        {anime.episodes ? `${anime.episodes} EPISODES` : '? EPISODES'}
+                {/* Bottom Left: TV + EP - Always Visible */}
+                <div className="absolute bottom-2 left-2 flex gap-1.5 group-hover:opacity-0 transition-opacity duration-300">
+                    <span className="bg-white/20 backdrop-blur-sm text-white px-2 py-1 rounded text-xs font-bold">
+                        {anime.type || 'TV'}
                     </span>
-                    <div className="flex items-center gap-1 text-white font-medium">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-[#facc15]">
-                            <path fillRule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clipRule="evenodd" />
-                        </svg>
-                        {anime.score}
+                    {episodeCount && (
+                        <span className="bg-[#22c55e] text-white px-2 py-1 rounded text-xs font-bold flex items-center gap-1">
+                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M19 4H5a2 2 0 00-2 2v12a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2zm-8 7H9.5v-.5h-2v3h2V13H11v2H6V9h5v2zm7 0h-1.5v-.5h-2v3h2V13H18v2h-5V9h5v2z" /></svg>
+                            {episodeCount}
+                        </span>
+                    )}
+                </div>
+
+                {/* Hover Overlay - Full Info Card */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/90 to-black/70 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3">
+                    {/* HD Badge - Top Right on Hover */}
+                    <div className="absolute top-2 right-2">
+                        <span className="bg-[#d886ff] text-black px-2 py-1 rounded text-xs font-bold">HD</span>
+                    </div>
+
+                    {/* Title */}
+                    <h3 className="text-sm font-bold text-white mb-1 line-clamp-2 leading-tight">
+                        {anime.title}
+                    </h3>
+
+                    {/* Rating + Info Row */}
+                    <div className="flex items-center gap-1.5 mb-2 flex-wrap">
+                        {anime.score > 0 && (
+                            <span className="text-[#facc15] text-xs font-bold flex items-center gap-0.5">
+                                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" /></svg>
+                                {anime.score.toFixed(1)}
+                            </span>
+                        )}
+                        <span className="bg-[#d886ff] text-black px-1.5 py-0.5 rounded text-[10px] font-bold">HD</span>
+                        {episodeCount && (
+                            <span className="text-gray-300 text-[10px] font-medium">{episodeCount} eps</span>
+                        )}
+                        <span className="text-gray-400 text-[10px]">{anime.type || 'TV'}</span>
+                    </div>
+
+                    {/* Synopsis */}
+                    <p className="text-gray-400 text-[10px] line-clamp-2 mb-2 leading-relaxed">
+                        {anime.synopsis || 'No description available.'}
+                    </p>
+
+                    {/* Status */}
+                    <div className="flex items-center gap-1 mb-2">
+                        <span className="text-gray-500 text-[10px]">Status:</span>
+                        <span className="text-white text-[10px] font-medium">
+                            {anime.status === 'RELEASING' ? 'Ongoing' : anime.status === 'FINISHED' ? 'Complete' : anime.status || 'Unknown'}
+                        </span>
+                    </div>
+
+                    {/* Genres */}
+                    {anime.genres && anime.genres.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mb-3">
+                            {anime.genres.slice(0, 3).map((genre, idx) => (
+                                <span key={idx} className="border border-gray-600 text-gray-300 px-1.5 py-0.5 rounded text-[9px]">
+                                    {genre.name}
+                                </span>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Buttons - Watch first, Detail second */}
+                    <div className="flex gap-2">
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onWatchClick ? onWatchClick(anime) : onClick(anime); }}
+                            className="flex-1 flex items-center justify-center gap-1 bg-[#d886ff] hover:bg-[#c06ae0] text-black py-1.5 rounded text-[10px] font-bold transition-colors"
+                        >
+                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                            WATCH
+                        </button>
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onClick(anime); }}
+                            className="flex-1 flex items-center justify-center gap-1 bg-white/10 hover:bg-white/20 text-white py-1.5 rounded text-[10px] font-medium transition-colors"
+                        >
+                            <span className="w-2 h-2 bg-white rounded-full"></span>
+                            DETAIL
+                        </button>
+                        <button className="flex items-center justify-center bg-white/10 hover:bg-white/20 text-white p-1.5 rounded transition-colors">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                            </svg>
+                        </button>
                     </div>
                 </div>
             </div>
+
+            {/* Title Below Card */}
+            <h3 className="text-sm font-semibold text-gray-100 line-clamp-2 leading-tight group-hover:text-yorumi-accent transition-colors">
+                {anime.title}
+            </h3>
         </div>
     );
 };
