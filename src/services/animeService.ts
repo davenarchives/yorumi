@@ -31,7 +31,13 @@ const mapAnilistToAnime = (item: any) => ({
     anilist_banner_image: item.bannerImage,
     anilist_cover_image: item.coverImage?.extraLarge || item.coverImage?.large,
     // For ongoing anime, latest episode = next airing episode - 1
-    latestEpisode: item.nextAiringEpisode ? item.nextAiringEpisode.episode - 1 : undefined
+    latestEpisode: item.nextAiringEpisode ? item.nextAiringEpisode.episode - 1 : undefined,
+    characters: item.characters, // Pass through the characters object directly as logic is handled in component or matches structure
+    trailer: item.trailer ? {
+        id: item.trailer.id,
+        site: item.trailer.site,
+        thumbnail: item.trailer.thumbnail
+    } : undefined
 });
 
 export const animeService = {
@@ -51,7 +57,7 @@ export const animeService = {
 
     // Search anime via AniList
     async searchAnime(query: string, page: number = 1) {
-        const res = await fetch(`${API_BASE}/anilist/search?q=${encodeURIComponent(query)}&page=${page}`);
+        const res = await fetch(`${API_BASE}/anilist/search?q=${encodeURIComponent(query)}&page=${page}&limit=18`);
         const data = await res.json();
         return {
             data: data.media?.map(mapAnilistToAnime) || [],
