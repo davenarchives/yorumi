@@ -1,4 +1,4 @@
-# Yorumi 🌌
+# Yorumi ヨルミ
 
 > A modern, feature-rich platform for streaming anime and reading manga with a premium UI/UX experience.
 
