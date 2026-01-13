@@ -1,6 +1,7 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-import puppeteer from 'puppeteer';
+import { getBrowserInstance } from '../utils/browser';
+import { HTTPRequest } from 'puppeteer-core';
 
 const BASE_URL = 'https://mangakatana.com';
 const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36';
@@ -194,10 +195,8 @@ export async function getChapterPages(chapterUrl: string): Promise<ChapterPage[]
     try {
         // Launch Puppeteer headless browser
         console.log(`Launching Puppeteer for ${chapterUrl}...`);
-        browser = await puppeteer.launch({
-            headless: true,
-            args: ['--no-sandbox', '--disable-setuid-sandbox']
-        });
+        browser = await getBrowserInstance();
+
         const page = await browser.newPage();
 
         // Set a realistic user agent
@@ -205,7 +204,7 @@ export async function getChapterPages(chapterUrl: string): Promise<ChapterPage[]
 
         // Block images/css/fonts/media to speed up loading
         await page.setRequestInterception(true);
-        page.on('request', (req) => {
+        page.on('request', (req: HTTPRequest) => {
             if (['image', 'stylesheet', 'font', 'media'].includes(req.resourceType())) {
                 req.abort();
             } else {

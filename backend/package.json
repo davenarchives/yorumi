@@ -10,6 +10,7 @@
         "build": "tsc"
     },
     "dependencies": {
+        "@sparticuz/chromium": "^143.0.4",
         "@types/cheerio": "^0.22.35",
         "axios": "^1.6.0",
         "cheerio": "^1.1.2",
@@ -17,6 +18,7 @@
         "dotenv": "^16.3.1",
         "express": "^4.18.2",
         "puppeteer": "^24.34.0",
+        "puppeteer-core": "^24.35.0",
         "puppeteer-extra": "^3.3.6",
         "puppeteer-extra-plugin-stealth": "^2.11.2"
     },

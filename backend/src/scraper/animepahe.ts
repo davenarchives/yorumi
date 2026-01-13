@@ -1,10 +1,6 @@
 
-import puppeteer from 'puppeteer-extra';
-import StealthPlugin from 'puppeteer-extra-plugin-stealth';
-import { Browser, Page } from 'puppeteer';
-
-// Add stealth plugin to default puppeteer
-puppeteer.use(StealthPlugin());
+import { Browser, Page } from 'puppeteer-core';
+import { getBrowserInstance } from '../utils/browser';
 
 const BASE_URL = 'https://animepahe.si';
 const API_URL = 'https://animepahe.si/api';
@@ -47,10 +43,7 @@ export class AnimePaheScraper {
 
     private async getBrowser(): Promise<Browser> {
         if (!this.browser) {
-            this.browser = await puppeteer.launch({
-                headless: true,
-                args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-blink-features=AutomationControlled']
-            });
+            this.browser = await getBrowserInstance();
         }
         return this.browser;
     }
