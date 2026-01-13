@@ -6,9 +6,10 @@ import type { Anime } from '../types/anime';
 interface SpotlightHeroProps {
     animeList: Anime[];
     onAnimeClick: (anime: Anime) => void;
+    onWatchClick: (anime: Anime) => void;
 }
 
-const SpotlightHero: React.FC<SpotlightHeroProps> = ({ animeList, onAnimeClick }) => {
+const SpotlightHero: React.FC<SpotlightHeroProps> = ({ animeList, onAnimeClick, onWatchClick }) => {
     // Embla Carousel hook with Autoplay
     const [emblaRef, emblaApi] = useEmblaCarousel({
         loop: true,
@@ -149,7 +150,7 @@ const SpotlightHero: React.FC<SpotlightHeroProps> = ({ animeList, onAnimeClick }
                                     {/* Buttons - Absolute Positioned for consistency */}
                                     <div className="absolute bottom-12 left-8 md:left-14 flex gap-4 pointer-events-auto z-20">
                                         <button
-                                            onClick={() => onAnimeClick(anime)}
+                                            onClick={() => onWatchClick(anime)}
                                             className="bg-yorumi-accent text-yorumi-bg px-8 py-3.5 rounded-full font-bold hover:bg-white transition-all duration-300 transform hover:scale-105 flex items-center gap-3 shadow-[0_0_20px_rgba(253,200,73,0.3)] hover:shadow-[0_0_30px_rgba(253,200,73,0.6)]"
                                         >
                                             <div className="bg-yorumi-bg text-white rounded-full p-1.5 -ml-2">
