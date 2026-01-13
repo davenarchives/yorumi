@@ -8,11 +8,12 @@ interface TrendingNowProps {
     onAnimeClick: (anime: Anime) => void;
     onWatchClick?: (anime: Anime) => void;
     onViewAll?: () => void;
+    onMouseEnter?: (anime: Anime) => void;
 }
 
-const TrendingNow: React.FC<TrendingNowProps> = ({ animeList, onAnimeClick, onWatchClick, onViewAll }) => {
+const TrendingNow: React.FC<TrendingNowProps> = ({ animeList, onAnimeClick, onWatchClick, onViewAll, onMouseEnter }) => {
     const [emblaRef, emblaApi] = useEmblaCarousel({
-        align: 'start',
+        align: 'center',
         containScroll: 'trimSnaps',
         dragFree: true
     });
@@ -48,10 +49,11 @@ const TrendingNow: React.FC<TrendingNowProps> = ({ animeList, onAnimeClick, onWa
                             <ChevronRight className="w-4 h-4 text-gray-300" />
                         </button>
                     </div>
+
                     {onViewAll && (
                         <button
                             onClick={onViewAll}
-                            className="text-sm text-gray-400 hover:text-white transition-colors font-medium"
+                            className="text-xs font-semibold text-gray-400 hover:text-yorumi-accent transition-colors tracking-wider"
                         >
                             View All
                         </button>
@@ -68,9 +70,11 @@ const TrendingNow: React.FC<TrendingNowProps> = ({ animeList, onAnimeClick, onWa
                                 <div
                                     key={anime.mal_id}
                                     className="flex-[0_0_180px] md:flex-[0_0_210px] lg:flex-[0_0_230px] select-none cursor-pointer group relative"
+                                    onClick={() => onAnimeClick(anime)}
+                                    onMouseEnter={() => onMouseEnter?.(anime)}
                                 >
                                     {/* Image Container */}
-                                    <div className="relative aspect-[2/3] rounded-lg overflow-hidden mb-3 shadow-lg transition-transform duration-300 group-hover:scale-[1.02]">
+                                    <div className="relative aspect-[2/3] rounded-lg overflow-hidden mb-3 shadow-none ring-0 outline-none">
                                         <img
                                             src={anime.images.jpg.large_image_url || anime.images.jpg.image_url}
                                             alt={anime.title}
