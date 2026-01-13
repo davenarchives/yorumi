@@ -49,6 +49,12 @@ const MEDIA_FIELDS = `
         episode
         airingAt
     }
+    streamingEpisodes {
+        title
+        thumbnail
+        url
+        site
+    }
 `;
 
 export const anilistService = {
@@ -278,7 +284,7 @@ export const anilistService = {
     async getAnimeById(id: number) {
         const query = `
             query ($id: Int) {
-                Media(idMal: $id, type: ANIME) {
+                Media(id: $id, type: ANIME) {
                     ${MEDIA_FIELDS}
                     relations {
                         edges {
