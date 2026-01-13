@@ -148,6 +148,16 @@ export function useManga() {
         setShowMangaDetails(false);
     };
 
+    const closeAllModals = () => {
+        if (showMangaDetails || currentMangaChapter) {
+            setShowMangaDetails(false);
+            setCurrentMangaChapter(null);
+            setChapterPages([]);
+            setSelectedManga(null);
+            window.history.replaceState(null, '', window.location.pathname);
+        }
+    };
+
     const zoomIn = () => setZoomLevel(prev => Math.min(prev + 10, 100));
     const zoomOut = () => setZoomLevel(prev => Math.max(prev - 10, 30));
 
@@ -179,6 +189,7 @@ export function useManga() {
         loadMangaChapter: loadMangaChapterWithHistory,
         prefetchChapter,
         closeMangaReader,
+        closeAllModals,
         zoomIn,
         zoomOut,
         changeMangaPage,
