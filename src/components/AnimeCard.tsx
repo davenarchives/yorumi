@@ -5,16 +5,21 @@ interface AnimeCardProps {
     anime: Anime;
     onClick: (anime: Anime) => void;
     onWatchClick?: (anime: Anime) => void;
+    onMouseEnter?: (anime: Anime) => void;
 }
 
-const AnimeCard: React.FC<AnimeCardProps> = ({ anime, onClick, onWatchClick }) => {
+const AnimeCard: React.FC<AnimeCardProps> = ({ anime, onClick, onWatchClick, onMouseEnter }) => {
     // Get episode count - prefer latestEpisode for ongoing anime
     const episodeCount = anime.latestEpisode || anime.episodes;
 
     return (
-        <div className="select-none cursor-pointer group relative">
+        <div
+            className="select-none cursor-pointer group relative"
+            onClick={() => onClick(anime)}
+            onMouseEnter={() => onMouseEnter?.(anime)}
+        >
             {/* Image Container */}
-            <div className="relative aspect-[2/3] rounded-lg overflow-hidden mb-3 shadow-lg transition-transform duration-300 group-hover:scale-[1.02]">
+            <div className="relative aspect-[2/3] rounded-lg overflow-hidden mb-3 shadow-none ring-0 outline-none">
                 <img
                     src={anime.images.jpg.large_image_url || anime.images.jpg.image_url}
                     alt={anime.title}
@@ -101,14 +106,14 @@ const AnimeCard: React.FC<AnimeCardProps> = ({ anime, onClick, onWatchClick }) =
                     <div className="flex gap-2">
                         <button
                             onClick={(e) => { e.stopPropagation(); onWatchClick ? onWatchClick(anime) : onClick(anime); }}
-                            className="flex-1 flex items-center justify-center gap-1 bg-[#d886ff] hover:bg-[#c06ae0] text-black py-1.5 rounded text-[10px] font-bold transition-colors"
+                            className="flex-1 flex items-center justify-center gap-1 bg-[#d886ff] hover:bg-[#c06ae0] text-black py-1.5 rounded text-[9px] font-bold transition-colors"
                         >
                             <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
                             WATCH
                         </button>
                         <button
                             onClick={(e) => { e.stopPropagation(); onClick(anime); }}
-                            className="flex-1 flex items-center justify-center gap-1 bg-white/10 hover:bg-white/20 text-white py-1.5 rounded text-[10px] font-medium transition-colors"
+                            className="flex-1 flex items-center justify-center gap-1 bg-white/10 hover:bg-white/20 text-white py-1.5 rounded text-[9px] font-medium transition-colors"
                         >
                             <span className="w-2 h-2 bg-white rounded-full"></span>
                             DETAIL
