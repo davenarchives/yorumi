@@ -62,8 +62,14 @@ export class AnimePaheScraper {
 
         try {
             // Handle protection
+            // Handle protection by waiting for a key element instead of hard sleep
             await page.goto(BASE_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
-            await new Promise(r => setTimeout(r, DDOS_WAIT));
+            try {
+                // Wait for the main content to load, indicating bypass of DDoS guard
+                await page.waitForSelector('.main-header', { timeout: 15000 });
+            } catch (e) {
+                console.log('Timeout waiting for selector, continuing anyway...');
+            }
             console.log(`Current URL: ${page.url()}`);
             console.log(`Page Title: ${await page.title()}`);
             await page.screenshot({ path: 'debug_after_wait.png' });
@@ -114,7 +120,12 @@ export class AnimePaheScraper {
 
         try {
             await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
-            await new Promise(r => setTimeout(r, DDOS_WAIT));
+            try {
+                // Wait for the main content to load
+                await page.waitForSelector('.main-header', { timeout: 15000 });
+            } catch (e) {
+                console.log('Timeout waiting for selector in getEpisodes, continuing...');
+            }
 
             const apiUrl = `${API_URL}?m=release&id=${animeSessionId}&sort=episode_asc&page=${pageNum}`;
             console.log(`Fetching episodes: ${apiUrl}`);
