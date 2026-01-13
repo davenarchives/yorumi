@@ -88,6 +88,15 @@ export function useStreams(scraperSession: string | null) {
         setShowQualityMenu(false);
     };
 
+    // Clear all stream state when switching anime
+    const clearStreams = () => {
+        setCurrentEpisode(null);
+        setStreams([]);
+        setSelectedStreamIndex(0);
+        setStreamLoading(false);
+        streamCache.current.clear();
+    };
+
     return {
         // State
         currentEpisode,
@@ -109,5 +118,6 @@ export function useStreams(scraperSession: string | null) {
         setShowQualityMenu,
         setPlayerMode,
         getMappedQuality,
+        clearStreams,
     };
 }
