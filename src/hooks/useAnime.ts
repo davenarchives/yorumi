@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import type { Anime, Episode } from '../types/anime';
 import { animeService } from '../services/animeService';
+import { useContinueWatching } from './useContinueWatching';
 
 
 export function useAnime() {
+    const { continueWatchingList, saveProgress, removeFromHistory } = useContinueWatching();
     const [topAnime, setTopAnime] = useState<Anime[]>([]);
     const [spotlightAnime, setSpotlightAnime] = useState<Anime[]>([]);
     const [trendingAnime, setTrendingAnime] = useState<Anime[]>([]);
@@ -143,10 +145,12 @@ export function useAnime() {
         fetchPopularSeason();
     }, []);
 
-    const [viewMode, setViewMode] = useState<'default' | 'trending' | 'seasonal'>('default');
+    const [viewMode, setViewMode] = useState<'default' | 'trending' | 'seasonal' | 'continue_watching'>('default');
 
     // View All Fetcher
-    const fetchViewAll = async (type: 'trending' | 'seasonal', page: number) => {
+    const fetchViewAll = async (type: 'trending' | 'seasonal' | 'continue_watching', page: number) => {
+        if (type === 'continue_watching') return; // Local data, no fetch needed
+
         setViewAllLoading(true);
         try {
             let data;
@@ -169,7 +173,7 @@ export function useAnime() {
         }
     };
 
-    const openViewAll = (type: 'trending' | 'seasonal') => {
+    const openViewAll = (type: 'trending' | 'seasonal' | 'continue_watching') => {
         // Push state only if we are not already in that mode (to avoid double pushes if clicked multiple times, though UI hides it)
         // Actually, we should push to ensure back works.
         window.history.pushState({ modal: 'view_all', type }, '', `#view/${type}`);
@@ -197,7 +201,9 @@ export function useAnime() {
 
         try {
             // Fetch full details from AniList
-            const data = await animeService.getAnimeDetails(anime.mal_id);
+            // Use AniList ID if available for robust lookup, otherwise fallback to MAL ID
+            const detailsId = anime.id || anime.mal_id;
+            const data = await animeService.getAnimeDetails(detailsId);
             if (data?.data) {
                 setSelectedAnime(data.data);
             }
@@ -209,45 +215,169 @@ export function useAnime() {
         preloadEpisodes(anime);
     };
 
-    // Preload episodes for details modal preview
+    // Internal helper to resolve session and cache episodes without setting state
+    const resolveAndCacheEpisodes = async (anime: Anime): Promise<{ session: string | null, eps: Episode[] }> => {
+        // Check session cache first
+        let session: string | null = null;
+        if (scraperSessionCache.current.has(anime.mal_id)) {
+            session = scraperSessionCache.current.get(anime.mal_id)!;
+        } else {
+            // 1. Construct search queries (Title, English, Synonyms)
+            const queries = new Set<string>();
+            if (anime.title) queries.add(anime.title);
+            if (anime.title_english) queries.add(anime.title_english);
+            if (anime.synonyms) anime.synonyms.forEach(s => queries.add(s));
+
+            // Limit to top 4 unique queries to avoid spamming
+            const queryList = Array.from(queries).slice(0, 4);
+
+            // 2. Run searches in parallel
+            try {
+                const results = await Promise.all(
+                    queryList.map(q => animeService.searchScraper(q).then(res => res || []).catch(() => []))
+                );
+
+                const allCandidates = results.flat();
+
+                // 3. Find Best Match
+                if (allCandidates.length > 0) {
+                    const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9\s]/g, '');
+                    const extractNumbers = (s: string) => (s.match(/\d+/g) || []).map(Number);
+
+                    let bestMatch = null;
+                    let maxScore = -1;
+
+                    const targetNumbers = extractNumbers(anime.title + (anime.title_english || ''));
+
+                    for (const candidate of allCandidates) {
+                        let score = 0;
+                        const candTitle = normalize(candidate.title);
+
+                        // Check against all anime titles/synonyms
+                        // Fuzzy Token Overlap
+                        const cleanTokens = (str: string) => new Set(str.split(/\s+/).filter(t => t.length > 2));
+                        const cTokens = cleanTokens(candTitle);
+
+                        let maxOverlap = 0;
+
+                        for (const q of queries) {
+                            const qTokens = cleanTokens(normalize(q));
+                            let matches = 0;
+                            qTokens.forEach(t => {
+                                if (cTokens.has(t)) matches++;
+                            });
+
+                            const overlap = qTokens.size > 0 ? matches / qTokens.size : 0;
+                            if (overlap > maxOverlap) maxOverlap = overlap;
+                        }
+
+                        if (maxOverlap >= 0.75) {
+                            score += 15;
+                        } else if (maxOverlap >= 0.5) {
+                            score += 5;
+                        }
+
+                        for (const q of queries) {
+                            const queryNorm = normalize(q);
+                            if (candTitle.includes(queryNorm) || queryNorm.includes(candTitle)) {
+                                score += 5;
+                                break;
+                            }
+                        }
+
+                        // CRITICAL: Number Check (Season matching)
+                        const candNumbers = extractNumbers(candidate.title);
+                        if (targetNumbers.length > 0) {
+                            if (candNumbers.length === 0) {
+                                score -= 5;
+                            } else {
+                                const hasOverlap = targetNumbers.some(n => candNumbers.includes(n));
+                                if (!hasOverlap) {
+                                    score -= 20; // Heavy penalty for number mismatch
+                                }
+                            }
+                        }
+
+                        if (score > maxScore) {
+                            maxScore = score;
+                            bestMatch = candidate;
+                        }
+                    }
+
+                    if (bestMatch && maxScore > -10) {
+                        session = bestMatch.session;
+                        if (session) scraperSessionCache.current.set(anime.mal_id, session);
+                    } else if (allCandidates.length > 0) {
+                        // Fallback
+                        session = allCandidates[0].session;
+                    }
+                }
+            } catch (e) {
+                console.error("Error resolving scraper session", e);
+            }
+        }
+
+        if (session) {
+            if (episodesCache.current.has(session)) {
+                return { session, eps: episodesCache.current.get(session)! };
+            } else {
+                try {
+                    const epData = await animeService.getEpisodes(session);
+                    const newEpisodes = epData?.episodes || epData?.ep_details || (Array.isArray(epData) ? epData : []);
+                    if (newEpisodes.length > 0) {
+                        episodesCache.current.set(session, newEpisodes);
+                        return { session, eps: newEpisodes };
+                    } else {
+                        // Invalidate session if no episodes found, so we try searching again next time
+                        scraperSessionCache.current.delete(anime.mal_id);
+                    }
+                } catch (e) {
+                    console.error("Error fetching episodes", e);
+                    scraperSessionCache.current.delete(anime.mal_id);
+                }
+            }
+        }
+
+        return { session, eps: [] };
+    };
+
+    // Preload episodes for details modal preview (Updates State)
     const preloadEpisodes = async (anime: Anime) => {
+        // Optimization: Check cache synchronously first to prevent flash
+        if (scraperSessionCache.current.has(anime.mal_id)) {
+            const session = scraperSessionCache.current.get(anime.mal_id)!;
+            if (episodesCache.current.has(session)) {
+                setEpisodes(episodesCache.current.get(session)!);
+                setScraperSession(session);
+                return;
+            }
+        }
+
         setEpLoading(true);
         setEpisodes([]);
         setScraperSession(null);
 
         try {
-            const resolveScraperSession = async () => {
-                if (scraperSessionCache.current.has(anime.mal_id)) {
-                    return scraperSessionCache.current.get(anime.mal_id)!;
-                }
-                const searchData = await animeService.searchScraper(anime.title);
-                if (searchData?.length > 0) {
-                    const session = searchData[0].session;
-                    scraperSessionCache.current.set(anime.mal_id, session);
-                    return session;
-                }
-                return null;
-            };
-
-            const session = await resolveScraperSession();
-            if (session) {
-                setScraperSession(session);
-                if (episodesCache.current.has(session)) {
-                    setEpisodes(episodesCache.current.get(session)!);
-                } else {
-                    const epData = await animeService.getEpisodes(session);
-                    const newEpisodes = epData?.episodes || epData?.ep_details || (Array.isArray(epData) ? epData : []);
-                    if (newEpisodes.length > 0) {
-                        episodesCache.current.set(session, newEpisodes);
-                        setEpisodes(newEpisodes);
-                    }
-                }
-            }
+            const { session, eps } = await resolveAndCacheEpisodes(anime);
+            if (session) setScraperSession(session);
+            if (eps.length > 0) setEpisodes(eps);
         } catch (e) {
             console.error('Failed to preload episodes', e);
         } finally {
             setEpLoading(false);
         }
+    };
+
+    // Prefetch episodes in background (Does NOT update state unless logic requires, mostly populates cache)
+    const prefetchEpisodes = async (anime: Anime) => {
+        // Prevent redundant prefetches if already cached
+        if (scraperSessionCache.current.has(anime.mal_id)) {
+            const session = scraperSessionCache.current.get(anime.mal_id)!;
+            if (episodesCache.current.has(session)) return; // Already fully cached
+        }
+
+        // Run silently
+        resolveAndCacheEpisodes(anime).catch(err => console.error("Prefetch error", err));
     };
 
     const startWatching = async () => {
@@ -265,9 +395,22 @@ export function useAnime() {
 
     // Handle browser back button for modals and view all
     useEffect(() => {
-        const onPopState = () => {
+        const onPopState = (event: PopStateEvent) => {
+            const state = event.state;
+
+            // If we're going back from watch modal, re-show details modal
+            if (showWatchModal && state?.modal === 'details') {
+                setShowWatchModal(false);
+                setShowAnimeDetails(true);
+                // Episodes are already loaded, no need to reload
+                return;
+            }
+
+            // Otherwise handle closing modals normally
             if (showWatchModal) {
                 setShowWatchModal(false);
+                setShowAnimeDetails(false);
+                setSelectedAnime(null);
                 setEpisodes([]);
                 setEpisodeSearchQuery('');
             } else if (showAnimeDetails) {
@@ -291,9 +434,33 @@ export function useAnime() {
         if (showWatchModal) window.history.back();
     };
 
+    // Close all modals without affecting history (used when search starts)
+    const closeAllModals = () => {
+        if (showWatchModal || showAnimeDetails) {
+            setShowWatchModal(false);
+            setShowAnimeDetails(false);
+            setSelectedAnime(null);
+            setEpisodes([]);
+            setEpisodeSearchQuery('');
+            // Clear the hash without adding to history
+            window.history.replaceState(null, '', window.location.pathname);
+        }
+    };
+
     const handleAnimeClickWithHistory = async (anime: Anime) => {
         window.history.pushState({ modal: 'details', id: anime.mal_id }, '', `#anime/${anime.mal_id}`);
         await handleAnimeClick(anime);
+    };
+
+    // Watch anime directly (for Watch Now buttons on cards/hero)
+    const watchAnime = async (anime: Anime) => {
+        setSelectedAnime(anime);
+        setShowAnimeDetails(false);
+        setShowWatchModal(true);
+        window.history.pushState({ modal: 'watch' }, '', `#watch/${anime.mal_id}`);
+
+        // Preload episodes
+        preloadEpisodes(anime);
     };
 
     const startWatchingWithHistory = () => {
@@ -325,8 +492,10 @@ export function useAnime() {
         setEpisodeSearchQuery,
         handleAnimeClick: handleAnimeClickWithHistory,
         startWatching: startWatchingWithHistory,
+        watchAnime,
         closeDetails,
         closeWatch,
+        closeAllModals,
         changePage,
         spotlightAnime,
         trendingAnime,
@@ -341,7 +510,15 @@ export function useAnime() {
         viewMode,
         openViewAll,
         closeViewAll,
-        changeViewAllPage
+        changeViewAllPage,
+
+        // Continue Watching
+        continueWatchingList,
+        saveProgress,
+        removeFromHistory,
+
+        // Prefetching
+        prefetchEpisodes
     };
 }
 
