@@ -4,7 +4,7 @@ import type { Manga } from '../types/manga';
 import { animeService } from '../services/animeService';
 import { mangaService } from '../services/mangaService';
 
-export function useSearch(activeTab: 'anime' | 'manga') {
+export function useSearch(activeTab: 'anime' | 'manga', onSearchStart?: () => void) {
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<(Anime | Manga)[]>([]);
     const [isSearching, setIsSearching] = useState(false);
@@ -69,12 +69,25 @@ export function useSearch(activeTab: 'anime' | 'manga') {
         setIsSearching(false);
     };
 
+    // Wrapper that clears search state when query becomes empty
+    const handleSearchQueryChange = (query: string) => {
+        // If we're starting a new search (going from no query to having one), notify to close modals
+        if (query.trim() && !searchQuery.trim() && onSearchStart) {
+            onSearchStart();
+        }
+        setSearchQuery(query);
+        if (!query.trim()) {
+            setSearchResults([]);
+            setIsSearching(false);
+        }
+    };
+
     return {
         searchQuery,
         searchResults,
         isSearching,
         searchLoading,
-        setSearchQuery,
+        setSearchQuery: handleSearchQueryChange,
         handleSearch,
         clearSearch,
         searchPagination,
