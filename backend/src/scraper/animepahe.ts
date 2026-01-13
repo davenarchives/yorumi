@@ -61,23 +61,23 @@ export class AnimePaheScraper {
         await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
 
         try {
-            // Handle protection
-            // Handle protection by waiting for a key element instead of hard sleep
-            await page.goto(BASE_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
-            try {
-                // Wait for the main content to load, indicating bypass of DDoS guard
-                await page.waitForSelector('.main-header', { timeout: 15000 });
-            } catch (e) {
-                console.log('Timeout waiting for selector, continuing anyway...');
-            }
-            console.log(`Current URL: ${page.url()}`);
-            console.log(`Page Title: ${await page.title()}`);
-            await page.screenshot({ path: 'debug_after_wait.png' });
-
             const searchUrl = `${API_URL}?m=search&q=${encodeURIComponent(query)}`;
             console.log(`Searching: ${searchUrl}`);
 
-            await page.goto(searchUrl, { waitUntil: 'domcontentloaded' });
+            // Go directly to search URL
+            await page.goto(searchUrl, { waitUntil: 'domcontentloaded', timeout: 15000 });
+
+            // Wait for potential DDoS guard to resolve
+            // We check if the body looks like JSON (starts with {)
+            try {
+                await page.waitForFunction(
+                    () => document.body.innerText.trim().startsWith('{'),
+                    { timeout: 8000 } // Give it 8s max to resolve
+                );
+            } catch (e) {
+                console.log('Timeout waiting for JSON expectation, trying to parse anyway...');
+            }
+
             const responseText = await page.evaluate(() => document.body.innerText);
 
             let response: any;
@@ -119,18 +119,22 @@ export class AnimePaheScraper {
         await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
 
         try {
-            await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
-            try {
-                // Wait for the main content to load
-                await page.waitForSelector('.main-header', { timeout: 15000 });
-            } catch (e) {
-                console.log('Timeout waiting for selector in getEpisodes, continuing...');
-            }
-
             const apiUrl = `${API_URL}?m=release&id=${animeSessionId}&sort=episode_asc&page=${pageNum}`;
             console.log(`Fetching episodes: ${apiUrl}`);
 
-            await page.goto(apiUrl, { waitUntil: 'domcontentloaded' });
+            // Direct navigation
+            await page.goto(apiUrl, { waitUntil: 'domcontentloaded', timeout: 15000 });
+
+            // Wait for JSON body
+            try {
+                await page.waitForFunction(
+                    () => document.body.innerText.trim().startsWith('{'),
+                    { timeout: 8000 }
+                );
+            } catch (e) {
+                console.log('Timeout waiting for JSON in getEpisodes, parsing anyway...');
+            }
+
             const responseText = await page.evaluate(() => document.body.innerText);
 
             let response: any;
