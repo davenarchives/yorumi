@@ -90,6 +90,11 @@ export const animeService = {
         if (cached) return cached;
 
         const res = await fetch(`${API_BASE}/anilist/top?page=${page}&limit=18`);
+
+        if (!res.ok) {
+            throw new Error(`Failed to fetch top anime: ${res.statusText}`);
+        }
+
         const data = await res.json();
         const result = {
             data: data.media?.map(mapAnilistToAnime) || [],
@@ -100,7 +105,9 @@ export const animeService = {
             }
         };
 
-        setCache(cacheKey, result);
+        if (result.data.length > 0) {
+            setCache(cacheKey, result);
+        }
         return result;
     },
 
@@ -139,6 +146,13 @@ export const animeService = {
         if (cached) return cached;
 
         const res = await fetch(`${API_BASE}/anilist/popular-this-season?page=${page}&limit=${limit}`);
+
+        if (!res.ok) {
+            console.warn(`Failed to fetch popular season: ${res.statusText}`);
+            // Don't throw for widget sections, just return empty so UI doesn't crash completely
+            return { data: [], pagination: null };
+        }
+
         const data = await res.json();
         const result = {
             data: data.media?.map(mapAnilistToAnime) || [],
@@ -148,7 +162,10 @@ export const animeService = {
                 has_next_page: data.pageInfo?.hasNextPage || false
             }
         };
-        setCache(cacheKey, result);
+
+        if (result.data.length > 0) {
+            setCache(cacheKey, result);
+        }
         return result;
     },
 
@@ -187,6 +204,12 @@ export const animeService = {
         if (cached) return cached;
 
         const res = await fetch(`${API_BASE}/anilist/trending?page=${page}&limit=${limit}`);
+
+        if (!res.ok) {
+            console.warn(`Failed to fetch trending: ${res.statusText}`);
+            return { data: [], pagination: null };
+        }
+
         const data = await res.json(); // backend returns { media, pageInfo } structure for these endpoints?
         // Wait, backend anilist.service.ts returns response.data.data.Page which has fields 'media' and 'pageInfo'.
         // Frontend anilist.routes.ts sends back `data` which IS the Page object.
@@ -198,7 +221,10 @@ export const animeService = {
                 has_next_page: data.pageInfo?.hasNextPage || false
             }
         };
-        setCache(cacheKey, result);
+
+        if (result.data.length > 0) {
+            setCache(cacheKey, result);
+        }
         return result;
     },
 };
