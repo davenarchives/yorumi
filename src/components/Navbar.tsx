@@ -46,7 +46,7 @@ export default function Navbar({
     }, []);
 
     return (
-        <nav className={`fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-8 transition-colors duration-500 ${isScrolled ? 'bg-[#0a0a0a]/95 backdrop-blur-md border-b border-white/5 py-3' : 'bg-gradient-to-b from-black via-black/60 to-transparent border-transparent py-4'
+        <nav className={`fixed top-0 left-0 right-0 z-[100] flex items-center justify-between px-8 transition-colors duration-500 ${isScrolled ? 'bg-[#0a0a0a]/95 backdrop-blur-md border-b border-white/5 py-3' : 'bg-gradient-to-b from-black via-black/60 to-transparent border-transparent py-4'
             }`}>
             {/* LEFT: Logo & Search */}
             <div className="flex items-center gap-6 md:gap-8 flex-1">

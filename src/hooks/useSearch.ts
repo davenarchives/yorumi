@@ -91,6 +91,7 @@ export function useSearch(activeTab: 'anime' | 'manga', onSearchStart?: () => vo
         handleSearch,
         clearSearch,
         searchPagination,
-        loadMore
+        loadMore,
+        executeSearch: performSearch
     };
 }

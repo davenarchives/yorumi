@@ -1,0 +1,59 @@
+
+import MangaCard from '../components/MangaCard';
+import Pagination from '../components/Pagination';
+import LoadingSpinner from '../components/LoadingSpinner';
+import { useManga } from '../hooks/useManga';
+
+export default function MangaPage() {
+    const manga = useManga();
+
+    if (manga.mangaLoading && manga.mangaPage === 1) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <LoadingSpinner size="lg" text="Loading Manga..." />
+            </div>
+        );
+    }
+
+    // TODO: Create ReaderPage and MangaDetailsPage
+    const handleMangaClick = (item: any) => {
+        // navigate(`/manga/${item.mal_id}`);
+        // For now, since we haven't refactored MangaDetails fully, we might leave this as a TODO
+        // or just let the old modal logic stay if we imported the modal?
+        // But the goal is "No Modals".
+        console.log('Manga clicked', item);
+        alert('Manga details page coming soon!');
+    };
+
+    return (
+        <div className="min-h-screen pb-20 pt-24">
+            <div className="container mx-auto px-4 z-10 relative">
+                <h2 className="text-xl font-bold mb-6 text-white border-l-4 border-yorumi-main pl-3">Top Manga</h2>
+                {manga.topManga.length > 0 ? (
+                    <>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+                            {manga.topManga.map((item) => (
+                                <MangaCard
+                                    key={item.mal_id}
+                                    manga={item}
+                                    onClick={() => handleMangaClick(item)}
+                                />
+                            ))}
+                        </div>
+
+                        <Pagination
+                            currentPage={manga.mangaPage}
+                            lastPage={manga.mangaLastPage}
+                            onPageChange={manga.changeMangaPage}
+                            isLoading={manga.mangaLoading}
+                        />
+                    </>
+                ) : (
+                    <div className="text-center text-gray-400 py-12">
+                        No manga found.
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}

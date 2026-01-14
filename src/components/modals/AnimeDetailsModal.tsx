@@ -5,8 +5,8 @@ import AnimeCard from '../AnimeCard';
 // Episode Grid Component with Pagination (30 per page)
 // Episode List Component with Pagination (20 per page)
 const EpisodeList = ({ episodes, onEpisodeClick }: { episodes: Episode[], onEpisodeClick: (ep: Episode) => void }) => {
-    // 100 eps per page to handle long shows like One Piece while keeping DOM light
-    const ITEMS_PER_PAGE = 100;
+    // 30 eps per page as requested
+    const ITEMS_PER_PAGE = 30;
     const [page, setPage] = useState(1);
     const totalPages = Math.ceil(episodes.length / ITEMS_PER_PAGE);
 

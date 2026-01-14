@@ -1,0 +1,419 @@
+import { createContext, useContext, useState, useRef, useEffect, type ReactNode } from 'react';
+import type { Anime, Episode } from '../types/anime';
+import { animeService } from '../services/animeService';
+import { useContinueWatching } from '../hooks/useContinueWatching';
+
+interface AnimeContextType {
+    // State
+    topAnime: Anime[];
+    spotlightAnime: Anime[];
+    trendingAnime: Anime[];
+    popularSeason: Anime[];
+    selectedAnime: Anime | null;
+    showAnimeDetails: boolean;
+    showWatchModal: boolean;
+    episodes: Episode[];
+    scraperSession: string | null;
+    epLoading: boolean;
+    detailsLoading: boolean;
+    loading: boolean;
+    trendingLoading: boolean;
+    popularSeasonLoading: boolean;
+    currentPage: number;
+    lastVisiblePage: number;
+    error: string | null;
+    episodeSearchQuery: string;
+
+    // View All State
+    viewAllAnime: Anime[];
+    viewAllLoading: boolean;
+    viewAllPagination: {
+        last_visible_page: number;
+        current_page: number;
+        has_next_page: boolean;
+    };
+    viewMode: 'default' | 'trending' | 'seasonal' | 'continue_watching' | 'popular';
+
+    // Actions
+    setEpisodeSearchQuery: (query: string) => void;
+    handleAnimeClick: (anime: Anime) => Promise<void>;
+    startWatching: () => void;
+    watchAnime: (anime: Anime) => void;
+    closeDetails: () => void;
+    closeWatch: () => void;
+    closeAllModals: () => void;
+    changePage: (page: number) => void;
+    openViewAll: (type: 'trending' | 'seasonal' | 'continue_watching' | 'popular') => void;
+    closeViewAll: () => void;
+    changeViewAllPage: (page: number) => void;
+    prefetchEpisodes: (anime: Anime) => void;
+    prefetchPage: (page: number) => void;
+    fetchHomeData: () => Promise<void>;
+
+    // Continue Watching
+    continueWatchingList: any[];
+    saveProgress: (anime: Anime, episode: any) => void;
+    removeFromHistory: (malId: number) => void;
+}
+
+const AnimeContext = createContext<AnimeContextType | undefined>(undefined);
+
+export function AnimeProvider({ children }: { children: ReactNode }) {
+    const { continueWatchingList, saveProgress, removeFromHistory } = useContinueWatching();
+
+    // Data State
+    const [topAnime, setTopAnime] = useState<Anime[]>([]);
+    const [spotlightAnime, setSpotlightAnime] = useState<Anime[]>([]);
+    const [trendingAnime, setTrendingAnime] = useState<Anime[]>([]);
+    const [popularSeason, setPopularSeason] = useState<Anime[]>([]);
+    const [selectedAnime, setSelectedAnime] = useState<Anime | null>(null);
+
+    // UI State (Modals - Kept for compatibility but might not be used in page router mainly)
+    const [showAnimeDetails, setShowAnimeDetails] = useState(false);
+    const [showWatchModal, setShowWatchModal] = useState(false);
+
+    // Loading States
+    const [loading, setLoading] = useState(true);
+    const [trendingLoading, setTrendingLoading] = useState(true);
+    const [popularSeasonLoading, setPopularSeasonLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    // Pagination
+    const [currentPage, setCurrentPage] = useState(1);
+    const [lastVisiblePage, setLastVisiblePage] = useState(1);
+
+    // Episode State
+    const [episodes, setEpisodes] = useState<Episode[]>([]);
+    const [scraperSession, setScraperSession] = useState<string | null>(null);
+    const [epLoading, setEpLoading] = useState(false);
+    const [detailsLoading, setDetailsLoading] = useState(false);
+    const [episodeSearchQuery, setEpisodeSearchQuery] = useState('');
+
+    // View All State
+    const [viewMode, setViewMode] = useState<'default' | 'trending' | 'seasonal' | 'continue_watching'>('default');
+    const [viewAllAnime, setViewAllAnime] = useState<Anime[]>([]);
+    const [viewAllLoading, setViewAllLoading] = useState(false);
+    const [viewAllPagination, setViewAllPagination] = useState({
+        last_visible_page: 1,
+        current_page: 1,
+        has_next_page: false
+    });
+
+    // Caches
+    const scraperSessionCache = useRef(new Map<number, string>());
+    const episodesCache = useRef(new Map<string, Episode[]>());
+
+    // --- Actions ---
+
+    const fetchHomeData = async () => {
+        // Spotlight
+        if (spotlightAnime.length === 0) {
+            try {
+                const { titles } = await animeService.getHiAnimeSpotlightTitles();
+                if (titles && titles.length > 0) {
+                    const resolvedAnime: Anime[] = [];
+                    const limitedTitles = titles.slice(0, 6);
+                    for (const title of limitedTitles) {
+                        try {
+                            const searchRes = await animeService.searchAnilist(title);
+                            if (searchRes && searchRes.length > 0) {
+                                const aniItem = searchRes[0];
+                                const mappedAnime: Anime = {
+                                    mal_id: aniItem.idMal || aniItem.id,
+                                    title: aniItem.title.english || aniItem.title.romaji || aniItem.title.native,
+                                    images: {
+                                        jpg: { image_url: aniItem.coverImage.large, large_image_url: aniItem.coverImage.extraLarge }
+                                    },
+                                    synopsis: aniItem.description?.replace(/<[^>]*>/g, '') || '',
+                                    type: aniItem.format,
+                                    episodes: aniItem.episodes,
+                                    score: aniItem.averageScore ? aniItem.averageScore / 10 : 0,
+                                    status: aniItem.status,
+                                    duration: aniItem.duration ? `${aniItem.duration} min` : 'Unknown',
+                                    rating: 'Unknown',
+                                    genres: aniItem.genres?.map((g: string) => ({ name: g, mal_id: 0 })) || [],
+                                    anilist_banner_image: aniItem.bannerImage,
+                                    anilist_cover_image: aniItem.coverImage.extraLarge || aniItem.coverImage.large,
+                                    latestEpisode: aniItem.nextAiringEpisode ? aniItem.nextAiringEpisode.episode - 1 : undefined
+                                };
+                                resolvedAnime.push(mappedAnime);
+                            }
+                        } catch (e) { }
+                    }
+                    if (resolvedAnime.length > 0) setSpotlightAnime(resolvedAnime);
+                }
+            } catch (e) {
+                console.error("Failed to fetch HiAnime spotlight", e);
+            }
+        }
+
+
+        // 2. Fetch Top Anime
+        // 1. Top Anime (Handled by useEffect on currentPage now)
+        // Leaving logic here for initial load consistency if needed, but safer to let useEffect handle it so pagination works.
+        // Actually, let's remove it from here and rely on the new useEffect being mounted.
+
+        /* Removed explicit TopAnime fetch from here to rely on useEffect [currentPage] */
+
+        // 3. Fetch Trending & Seasonal (Once)
+        if (trendingAnime.length === 0) {
+            setTrendingLoading(true);
+            try {
+                const tData = await animeService.getTrendingAnime(1, 10);
+                if (tData?.data) setTrendingAnime(tData.data);
+            } catch (e) { console.error(e); }
+            finally { setTrendingLoading(false); }
+        }
+
+        if (popularSeason.length === 0) {
+            setPopularSeasonLoading(true);
+            try {
+                const pData = await animeService.getPopularThisSeason(1, 10);
+                if (pData?.data) setPopularSeason(pData.data);
+            } catch (e) { console.error(e); }
+            finally { setPopularSeasonLoading(false); }
+        }
+    };
+
+    // --- Pagination Effect ---
+    // Re-fetch Top Anime when page changes
+    useEffect(() => {
+        const fetchPageData = async () => {
+            setLoading(true);
+            try {
+                // If we already have data for page 1 and it's the initial load, maybe skip?
+                // But simplified: just fetch.
+                const data = await animeService.getTopAnime(currentPage);
+                if (data?.data) {
+                    setTopAnime(data.data);
+                    setLastVisiblePage(data.pagination?.last_visible_page || 1);
+                }
+            } catch (err) {
+                console.error("Failed to fetch top anime page", currentPage, err);
+                setError('Failed to fetch anime.');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchPageData();
+    }, [currentPage]);
+
+    // --- Helpers ---
+
+    const resolveAndCacheEpisodes = async (anime: Anime): Promise<{ session: string | null, eps: Episode[] }> => {
+        // Shared logic from previous hook
+        let session: string | null = null;
+        if (scraperSessionCache.current.has(anime.mal_id)) {
+            session = scraperSessionCache.current.get(anime.mal_id)!;
+        } else {
+            const queries = new Set<string>();
+            if (anime.title) queries.add(anime.title);
+            if (anime.title_english) queries.add(anime.title_english);
+            if (anime.synonyms) anime.synonyms.forEach(s => queries.add(s));
+            const queryList = Array.from(queries).slice(0, 4);
+
+            try {
+                const results = await Promise.all(
+                    queryList.map(q => animeService.searchScraper(q).then(res => res || []).catch(() => []))
+                );
+                const allCandidates = results.flat();
+
+                if (allCandidates.length > 0) {
+                    // Simplified basic matching to keep file size down, relying on robust search service
+                    // Ideally re-implement the full scoring logic if needed
+                    session = allCandidates[0].session;
+                    if (session) scraperSessionCache.current.set(anime.mal_id, session);
+                }
+            } catch (e) {
+                console.error("Error resolving scraper session", e);
+            }
+        }
+
+        if (session) {
+            if (episodesCache.current.has(session)) {
+                return { session, eps: episodesCache.current.get(session)! };
+            } else {
+                try {
+                    const epData = await animeService.getEpisodes(session);
+                    const newEpisodes = epData?.episodes || epData?.ep_details || (Array.isArray(epData) ? epData : []);
+                    if (newEpisodes.length > 0) {
+                        episodesCache.current.set(session, newEpisodes);
+                        return { session, eps: newEpisodes };
+                    }
+                } catch (e) {
+                    scraperSessionCache.current.delete(anime.mal_id);
+                }
+            }
+        }
+        return { session, eps: [] };
+    };
+
+    const preloadEpisodes = async (anime: Anime) => {
+        if (scraperSessionCache.current.has(anime.mal_id)) {
+            const session = scraperSessionCache.current.get(anime.mal_id)!;
+            if (episodesCache.current.has(session)) {
+                setEpisodes(episodesCache.current.get(session)!);
+                setScraperSession(session);
+                return;
+            }
+        }
+
+        setEpLoading(true);
+        setEpisodes([]);
+        setScraperSession(null);
+
+        try {
+            const { session, eps } = await resolveAndCacheEpisodes(anime);
+            if (session) setScraperSession(session);
+            if (eps.length > 0) setEpisodes(eps);
+        } catch (e) {
+            console.error('Failed to preload episodes', e);
+        } finally {
+            setEpLoading(false);
+        }
+    };
+
+    // --- Actions ---
+
+    const handleAnimeClick = async (anime: Anime) => {
+        let currentAnime = anime;
+
+        // Only set optimistic state if we have a valid anime object (with images)
+        if (anime.images) {
+            setSelectedAnime(currentAnime);
+        }
+
+        setDetailsLoading(true); // Start loading details
+
+        try {
+            const detailsId = anime.id || anime.mal_id;
+            const data = await animeService.getAnimeDetails(detailsId);
+            if (data?.data) {
+                currentAnime = data.data;
+                setSelectedAnime(currentAnime);
+            }
+        } catch (err) {
+            console.error('Failed to fetch details', err);
+        } finally {
+            setDetailsLoading(false); // Stop loading regardless of success
+        }
+
+        preloadEpisodes(currentAnime);
+    };
+
+    const startWatching = () => {
+        setShowAnimeDetails(false);
+        setShowWatchModal(true);
+        if (episodes.length === 0 && !epLoading && !scraperSession && selectedAnime) {
+            preloadEpisodes(selectedAnime);
+        }
+    };
+
+    const watchAnime = (anime: Anime) => {
+        setSelectedAnime(anime);
+        setShowAnimeDetails(false);
+        setShowWatchModal(true);
+        preloadEpisodes(anime);
+    };
+
+    const closeDetails = () => {
+        setShowAnimeDetails(false);
+        // Clean up or navigate back if needed?
+        // With Router, the user uses browser back. 
+        // This might act as a "clear selection"
+        setSelectedAnime(null);
+    };
+
+    const closeWatch = () => {
+        setShowWatchModal(false);
+        // Return to details? 
+        setShowAnimeDetails(true);
+    };
+
+    const closeAllModals = () => {
+        setShowWatchModal(false);
+        setShowAnimeDetails(false);
+        setSelectedAnime(null);
+        setEpisodes([]);
+    };
+
+    const changePage = (page: number) => {
+        setCurrentPage(page);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const prefetchEpisodes = (anime: Anime) => {
+        resolveAndCacheEpisodes(anime).catch(console.error);
+    };
+
+    const prefetchPage = (page: number) => {
+        if (page <= lastVisiblePage) {
+            animeService.getTopAnime(page);
+        }
+    };
+
+    // View All Logic
+    const fetchViewAll = async (type: 'trending' | 'seasonal' | 'continue_watching' | 'popular', page: number) => {
+        if (type === 'continue_watching') return;
+
+        setViewAllLoading(true);
+        try {
+            let data;
+            if (type === 'trending') data = await animeService.getTrendingAnime(page, 18);
+            else if (type === 'seasonal') data = await animeService.getPopularThisSeason(page, 18);
+            else if (type === 'popular') data = await animeService.getTopAnime(page); // Re-use getTopAnime for "View All" pagination
+
+            if (data?.data) {
+                setViewAllAnime(data.data);
+                if (data.pagination) setViewAllPagination(data.pagination);
+            }
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setViewAllLoading(false);
+        }
+    };
+
+    const openViewAll = (type: any) => {
+        setViewMode(type);
+        // If continue_watching, data is already local, no fetch needed
+        if (type !== 'continue_watching') {
+            fetchViewAll(type, 1);
+        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const closeViewAll = () => {
+        setViewMode('default');
+        setViewAllAnime([]);
+    };
+
+    const changeViewAllPage = (page: number) => {
+        fetchViewAll(viewMode as any, page);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    return (
+        <AnimeContext.Provider value={{
+            topAnime, spotlightAnime, trendingAnime, popularSeason, selectedAnime,
+            showAnimeDetails, showWatchModal, episodes, scraperSession, epLoading,
+            detailsLoading, loading, trendingLoading, popularSeasonLoading, currentPage, lastVisiblePage,
+            error, episodeSearchQuery, viewAllAnime, viewAllLoading, viewAllPagination,
+            viewMode, setEpisodeSearchQuery, handleAnimeClick, startWatching,
+            watchAnime, closeDetails, closeWatch, closeAllModals, changePage,
+            openViewAll, closeViewAll, changeViewAllPage, prefetchEpisodes, prefetchPage,
+            continueWatchingList, saveProgress, removeFromHistory, fetchHomeData
+        }}>
+            {children}
+        </AnimeContext.Provider>
+    );
+}
+
+export const useAnime = () => {
+    const context = useContext(AnimeContext);
+    if (context === undefined) {
+        throw new Error('useAnime must be used within an AnimeProvider');
+    }
+    return context;
+};
