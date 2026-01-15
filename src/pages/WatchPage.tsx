@@ -12,7 +12,7 @@ export default function WatchPage() {
     const navigate = useNavigate();
 
     const animeHook = useAnime();
-    const { selectedAnime, episodes, epLoading, scraperSession, error } = animeHook;
+    const { selectedAnime, episodes, epLoading, scraperSession, error, saveProgress } = animeHook;
     const streamsHook = useStreams(scraperSession);
     const {
         currentStream,
@@ -61,6 +61,13 @@ export default function WatchPage() {
             }
         }
     }, [episodes, epNum]);
+
+    // 3. Save "Continue Watching" Progress
+    useEffect(() => {
+        if (selectedAnime && currentEpisode) {
+            saveProgress(selectedAnime, currentEpisode);
+        }
+    }, [selectedAnime, currentEpisode]);
 
     const handleEpisodeClick = (ep: Episode) => {
         setSearchParams({ ep: String(ep.episodeNumber) });
