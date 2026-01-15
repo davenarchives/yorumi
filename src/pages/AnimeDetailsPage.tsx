@@ -22,7 +22,7 @@ const EpisodeList = ({ episodes, onEpisodeClick }: { episodes: Episode[], onEpis
                         key={ep.session || ep.episodeNumber}
                         onClick={() => onEpisodeClick(ep)}
                         className="aspect-square flex items-center justify-center rounded transition-all duration-200 relative group bg-white/10 hover:bg-yorumi-accent hover:text-black hover:scale-105 hover:shadow-lg hover:shadow-yorumi-accent/20 text-gray-300 cursor-pointer border border-white/5 hover:border-yorumi-accent"
-                        title={ep.title || `Episode ${ep.episodeNumber}`}
+                        title={ep.title && ep.title !== 'Untitled' ? ep.title : `Episode ${ep.episodeNumber}`}
                     >
                         <span className="text-sm font-bold">{ep.episodeNumber}</span>
                     </button>

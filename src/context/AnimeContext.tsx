@@ -332,48 +332,39 @@ export function AnimeProvider({ children }: { children: ReactNode }) {
                     if (newEpisodes.length > 0) {
                         // 1. Try AniList Metadata first (Fast, already in memory)
                         if (anime.episodeMetadata?.length) {
+                            const metaList = anime.episodeMetadata;
                             newEpisodes.forEach((ep: Episode) => {
                                 if (!ep.title || ep.title === 'Untitled' || !ep.title.trim()) {
                                     const epNum = parseFloat(ep.episodeNumber);
                                     if (!isNaN(epNum)) {
-                                        const meta = anime.episodeMetadata?.find(m => {
+                                        // Strategy A: Regex match "Episode X"
+                                        let meta = metaList.find(m => {
                                             const match = m.title?.match(/Episode\s+(\d+)/i);
                                             return match && parseFloat(match[1]) === epNum;
                                         });
-                                        if (meta) {
+
+                                        // Strategy B: Array Index Fallback (assuming metadata is compliant and ordered)
+                                        // AniList streamingEpisodes are usually ordered 1..N
+                                        if (!meta && metaList[epNum - 1]) {
+                                            meta = metaList[epNum - 1];
+                                        }
+
+                                        if (meta && meta.title) {
+                                            // Clean up "Episode X - Title" format
                                             const cleanMatch = meta.title.match(/Episode\s+\d+\s*[-:]?\s*(.*)/i);
-                                            if (cleanMatch && cleanMatch[1]) ep.title = cleanMatch[1];
-                                            else ep.title = meta.title;
+                                            if (cleanMatch && cleanMatch[1] && cleanMatch[1].trim()) {
+                                                ep.title = cleanMatch[1].trim();
+                                            } else {
+                                                // Use full title if no prefix found or prefix is everything
+                                                ep.title = meta.title;
+                                            }
                                         }
                                     }
                                 }
                             });
                         }
 
-                        // 2. Check if we still have untitled episodes and fallback to Jikan (Slower, network request)
-                        const hasUntitled = newEpisodes.some((ep: Episode) => !ep.title || ep.title === 'Untitled');
-                        if (hasUntitled) {
-                            try {
-                                // Only fetch if we have a MAL ID
-                                if (anime.mal_id) {
-                                    const jikanEps = await animeService.getJikanEpisodes(anime.mal_id);
-                                    if (jikanEps && jikanEps.length > 0) {
-                                        newEpisodes.forEach((ep: Episode) => {
-                                            if (!ep.title || ep.title === 'Untitled' || !ep.title.trim()) {
-                                                const epNum = parseFloat(ep.episodeNumber);
-                                                // Match against Jikan's 'episode_id' which typically is the episode number
-                                                const jikanEp = jikanEps.find((j: any) => j.episode_id === epNum);
-                                                if (jikanEp && jikanEp.title) {
-                                                    ep.title = jikanEp.title;
-                                                }
-                                            }
-                                        });
-                                    }
-                                }
-                            } catch (e) {
-                                console.error("Failed to fetch Jikan fallback", e);
-                            }
-                        }
+
                     }
 
                     if (newEpisodes.length > 0) {

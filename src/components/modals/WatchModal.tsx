@@ -164,7 +164,7 @@ export default function WatchModal({
                                         .map((ep: Episode) => {
                                             const originalIndex = episodes.findIndex(e => e.session === ep.session);
                                             const meta = anime.episodeMetadata?.[originalIndex];
-                                            const displayTitle = meta?.title?.replace(/^Episode \d+[\s-]*:?/i, '') || ep.title || `Episode ${ep.episodeNumber}`;
+                                            const displayTitle = meta?.title?.replace(/^Episode \d+[\s-]*:?/i, '') || (ep.title && ep.title !== 'Untitled' ? ep.title : null) || `Episode ${ep.episodeNumber}`;
                                             const isSelected = currentEpisode?.session === ep.session;
 
                                             if (viewMode === 'grid') {
