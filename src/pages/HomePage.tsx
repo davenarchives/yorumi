@@ -23,7 +23,8 @@ export default function HomePage() {
 
     // Navigation Handlers
     const handleAnimeClick = (item: Anime) => {
-        navigate(`/anime/${item.mal_id}`, { state: { anime: item } });
+        const animeId = item.id || item.mal_id;
+        navigate(`/anime/${animeId}`, { state: { anime: item } });
     };
 
     const handleWatchClick = (item: Anime, episodeNumber?: number) => {

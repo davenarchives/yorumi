@@ -262,7 +262,11 @@ export default function WatchPage() {
                                                         <span className={`text-sm font-bold ${isCurrent ? 'text-yellow-500' : 'text-gray-400 group-hover:text-white'}`}>
                                                             EP {ep.episodeNumber}
                                                         </span>
-                                                        <span className="text-[10px] text-gray-600 font-mono">24:00</span>
+                                                        {isCurrent && (
+                                                            <span className="w-8 h-8 rounded-full bg-yellow-500 flex items-center justify-center">
+                                                                <svg className="w-4 h-4 text-black ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                                                            </span>
+                                                        )}
                                                     </div>
                                                     <span className={`text-sm truncate w-full ${isCurrent ? 'text-white' : 'text-gray-500'}`}>
                                                         {displayTitle}
