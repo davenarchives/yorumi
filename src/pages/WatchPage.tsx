@@ -144,7 +144,8 @@ export default function WatchPage() {
     // Use any cast to avoid type errors with mismatched interface if needed
     const animeData: any = selectedAnime;
     const currentEpTitle = episodes.find(e => e.episodeNumber == epNum)?.title;
-    const displayTitle = currentEpTitle && currentEpTitle !== 'Untitled' ? currentEpTitle : '';
+    const cleanCurrentTitle = currentEpTitle && currentEpTitle.trim().toLowerCase() !== 'untitled' ? currentEpTitle : null;
+    const displayTitle = cleanCurrentTitle || `Episode ${epNum}`;
 
     return (
         <div className="flex flex-col h-screen w-full bg-[#0a0a0a] text-white overflow-hidden pt-[72px]">
@@ -232,7 +233,9 @@ export default function WatchPage() {
                             <div className={viewMode === 'grid' ? "grid grid-cols-5 gap-2 p-3" : "flex flex-col"}>
                                 {filteredEpisodes.map((ep) => {
                                     const isCurrent = ep.episodeNumber == epNum;
-                                    const epTitle = ep.title && ep.title !== 'Untitled' ? ep.title : '';
+                                    const cleanTitle = ep.title && ep.title.trim().toLowerCase() !== 'untitled' ? ep.title : null;
+                                    const displayTitle = cleanTitle || `Episode ${ep.episodeNumber}`;
+
                                     return (
                                         <button
                                             key={ep.episodeNumber}
@@ -255,11 +258,9 @@ export default function WatchPage() {
                                                         </span>
                                                         <span className="text-[10px] text-gray-600 font-mono">24:00</span>
                                                     </div>
-                                                    {epTitle && (
-                                                        <span className={`text-sm truncate w-full ${isCurrent ? 'text-white' : 'text-gray-500'}`}>
-                                                            {epTitle}
-                                                        </span>
-                                                    )}
+                                                    <span className={`text-sm truncate w-full ${isCurrent ? 'text-white' : 'text-gray-500'}`}>
+                                                        {displayTitle}
+                                                    </span>
                                                 </>
                                             )}
                                         </button>
