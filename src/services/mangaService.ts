@@ -73,4 +73,10 @@ export const mangaService = {
         const res = await fetch(`${API_BASE}/manga/search?q=${encodeURIComponent(query)}`);
         return res.json();
     },
+
+    // Get Hot Updates from MangaKatana
+    async getHotUpdates() {
+        const res = await fetch(`${API_BASE}/manga/hot-updates`);
+        return res.json();
+    },
 };

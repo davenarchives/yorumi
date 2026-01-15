@@ -87,4 +87,18 @@ router.get('/pages', async (req: Request, res: Response) => {
     }
 });
 
+/**
+ * Get hot updates (MangaKatana)
+ * GET /api/manga/hot-updates
+ */
+router.get('/hot-updates', async (req: Request, res: Response) => {
+    try {
+        const updates = await mangaService.getHotUpdates();
+        res.json({ data: updates });
+    } catch (error) {
+        console.error('Hot updates error:', error);
+        res.status(500).json({ error: 'Failed to fetch hot updates' });
+    }
+});
+
 export default router;

@@ -17,6 +17,15 @@ const axiosInstance = axios.create({
     timeout: 15000,
 });
 
+export interface HotUpdate {
+    id: string;
+    title: string;
+    chapter: string;
+    url: string;
+    thumbnail: string;
+    source: 'mangakatana';
+}
+
 export interface MangaSearchResult {
     id: string;
     title: string;
@@ -288,5 +297,62 @@ export async function getChapterPages(chapterUrl: string): Promise<ChapterPage[]
         if (browser) {
             await browser.close();
         }
+    }
+}
+
+/**
+ * Get hot updates from MangaKatana homepage
+ */
+export async function getHotUpdates(): Promise<HotUpdate[]> {
+    try {
+        const response = await axiosInstance.get('/');
+        const $ = cheerio.load(response.data);
+        const updates: HotUpdate[] = [];
+
+        // Strategy: Look for the specific "Hot Updates" section. 
+        // MK usually has #hot_update
+
+        let container = $('#hot_update');
+
+        if (container.length === 0) {
+            // Fallback: look for typical "item" grid if id changed
+            container = $('.widget-hot-update');
+        }
+
+        container.find('.item').each((_, element) => {
+            const $el = $(element);
+
+            // Image
+            const imgEl = $el.find('.wrap_img img');
+            const thumbnail = imgEl.attr('src') || imgEl.attr('data-src') || '';
+
+            // Title
+            const titleEl = $el.find('.title a');
+            const title = titleEl.text().trim();
+            const url = titleEl.attr('href') || '';
+
+            // Latest Chapter
+            const chapterEl = $el.find('.chapter a');
+            // Sometimes multiple chapters, grab first
+            const chapter = chapterEl.first().text().trim();
+
+            if (title && url) {
+                const id = url.split('/manga/')[1]?.replace(/\/$/, '') || '';
+                updates.push({
+                    id,
+                    title,
+                    chapter,
+                    url,
+                    thumbnail,
+                    source: 'mangakatana'
+                });
+            }
+        });
+
+        // Limit to reasonable number (e.g., 10-15)
+        return updates.slice(0, 15);
+    } catch (error) {
+        console.error('Error fetching hot updates:', error);
+        return [];
     }
 }

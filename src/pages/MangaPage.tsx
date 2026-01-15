@@ -1,7 +1,7 @@
-
 import MangaCard from '../components/MangaCard';
 import Pagination from '../components/Pagination';
 import LoadingSpinner from '../components/LoadingSpinner';
+import MangaSpotlight from '../components/MangaSpotlight';
 import { useManga } from '../hooks/useManga';
 
 export default function MangaPage() {
@@ -25,9 +25,22 @@ export default function MangaPage() {
         alert('Manga details page coming soon!');
     };
 
+    const handleSpotlightClick = (mangaId: string) => {
+        // Handle click from spotlight (which provides MK ID)
+        // Since we don't have full manga object, we might redirect to a generic reader or details 
+        // using the ID. For now, matching the behavior of grid items is tricky because they use MAL ID.
+        // But our Hot Updates give us MK ID directly.
+
+        console.log('Spotlight clicked', mangaId);
+        alert(`Manga details page coming soon! (ID: ${mangaId})`);
+    };
+
     return (
-        <div className="min-h-screen pb-20 pt-24">
-            <div className="container mx-auto px-4 z-10 relative">
+        <div className="min-h-screen pb-20">
+            {/* Spotlight Hero Section */}
+            <MangaSpotlight onMangaClick={handleSpotlightClick} />
+
+            <div className="container mx-auto px-4 z-10 relative pt-8">
                 <h2 className="text-xl font-bold mb-6 text-white border-l-4 border-yorumi-main pl-3">Top Manga</h2>
                 {manga.topManga.length > 0 ? (
                     <>

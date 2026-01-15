@@ -111,7 +111,7 @@ export function AnimeProvider({ children }: { children: ReactNode }) {
             try {
                 const { titles } = await animeService.getHiAnimeSpotlightTitles();
                 if (titles && titles.length > 0) {
-                    const limitedTitles = titles.slice(0, 6);
+                    const limitedTitles = titles.slice(0, 8);
 
                     // Parallelize the search for each title
                     const results = await Promise.all(

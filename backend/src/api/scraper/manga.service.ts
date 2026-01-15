@@ -52,3 +52,7 @@ export async function getChapterPages(url: string) {
     return mangakatana.getChapterPages(url);
 }
 
+export async function getHotUpdates() {
+    const updates = await mangakatana.getHotUpdates();
+    return updates.map(u => ({ ...u, id: `mk:${u.id}` }));
+}

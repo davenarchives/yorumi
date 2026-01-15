@@ -1,73 +1,130 @@
 import React from 'react';
-
-interface Manga {
-    mal_id: number;
-    title: string;
-    images: {
-        jpg: {
-            image_url: string;
-            large_image_url: string;
-        };
-    };
-    score: number;
-    rank?: number;
-    status: string;
-    type: string;
-    chapters: number | null;
-    volumes: number | null;
-}
+import type { Manga } from '../types/manga';
 
 interface MangaCardProps {
     manga: Manga;
     onClick: (manga: Manga) => void;
+    onReadClick?: (manga: Manga) => void;
+    onMouseEnter?: (manga: Manga) => void;
 }
 
-const MangaCard: React.FC<MangaCardProps> = ({ manga, onClick }) => {
+const MangaCard: React.FC<MangaCardProps> = ({ manga, onClick, onReadClick, onMouseEnter }) => {
+    // Determine count display (Chapters -> Volumes)
+    const countDisplay = manga.chapters
+        ? `${manga.chapters} ch`
+        : manga.volumes
+            ? `${manga.volumes} vol`
+            : null;
+
     return (
-        <div onClick={() => onClick(manga)} className="group relative bg-[#1c1333] rounded-xl overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-yorumi-main/40 cursor-pointer border border-white/5 hover:border-yorumi-accent/50">
+        <div
+            className="select-none cursor-pointer group relative"
+            onClick={() => onClick(manga)}
+            onMouseEnter={() => onMouseEnter?.(manga)}
+        >
             {/* Image Container */}
-            <div className="relative aspect-[2/3] overflow-hidden">
+            <div className="relative aspect-[2/3] rounded-lg overflow-hidden mb-3 shadow-none ring-0 outline-none">
                 <img
                     src={manga.images.jpg.large_image_url || manga.images.jpg.image_url}
                     alt={manga.title}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    className="w-full h-full object-cover"
                     loading="lazy"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-yorumi-bg via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-                {/* Hover Overlay Content */}
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-black/40 backdrop-blur-[2px]">
-                    <div className="w-12 h-12 rounded-full bg-yorumi-accent flex items-center justify-center text-yorumi-bg transform scale-0 group-hover:scale-100 transition-transform duration-300 delay-75 shadow-lg shadow-yorumi-accent/50">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
-                            <path d="M11.25 4.533A9.707 9.707 0 006 3a9.735 9.735 0 00-3.25.555.75.75 0 00-.5.707v14.25a.75.75 0 001 .707A8.237 8.237 0 016 18.75c1.995 0 3.823.707 5.25 1.886V4.533zM12.75 20.636A8.214 8.214 0 0118 18.75c1.995 0 3.823.707 5.25 1.886a.75.75 0 001-.707V5.262a.75.75 0 00-.5-.707A9.735 9.735 0 0018 3a9.707 9.707 0 00-5.25 1.533v16.103z" />
-                        </svg>
+                {/* Default Badges - Always Visible */}
+                {/* Top Right: Star Rating */}
+                {manga.score > 0 && (
+                    <div className="absolute top-2 right-2 group-hover:opacity-0 transition-opacity duration-300">
+                        <span className="bg-[#facc15] text-black px-2 py-1 rounded text-xs font-bold flex items-center gap-1">
+                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" /></svg>
+                            {manga.score.toFixed(1)}
+                        </span>
                     </div>
-                </div>
-            </div>
+                )}
 
-            {/* Info Container */}
-            <div className="p-4 bg-[#1c1333]">
-                <div className="flex justify-between items-start mb-2">
-                    <span className="text-[10px] font-bold text-yorumi-accent/80 uppercase tracking-wider bg-yorumi-accent/10 px-2 py-0.5 rounded">{manga.type || 'Manga'}</span>
-                    {!!manga.rank && <span className="text-[10px] font-bold text-gray-400 tracking-wider">#{manga.rank}</span>}
-                </div>
-
-                <h3 className="text-white font-bold text-sm line-clamp-2 mb-3 h-10 leading-snug group-hover:text-yorumi-accent transition-colors" title={manga.title}>
-                    {manga.title}
-                </h3>
-
-                <div className="flex justify-between items-center text-xs text-gray-400 pt-3 border-t border-white/5">
-                    <span className={`px-2 py-1 rounded-sm ${manga.status === 'Publishing' ? 'text-green-400' : 'text-gray-500'} font-medium uppercase tracking-wide text-[10px]`}>
-                        {manga.volumes ? `${manga.volumes} VOLS` : '? VOLS'}
+                {/* Bottom Left: Type + Count - Always Visible */}
+                <div className="absolute bottom-2 left-2 flex gap-1.5 group-hover:opacity-0 transition-opacity duration-300">
+                    <span className="bg-white/20 backdrop-blur-sm text-white px-2 py-1 rounded text-xs font-bold">
+                        {manga.type || 'Manga'}
                     </span>
-                    <div className="flex items-center gap-1 text-white font-bold">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-3.5 h-3.5 text-yorumi-accent">
-                            <path fillRule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clipRule="evenodd" />
-                        </svg>
-                        {manga.score}
+                    {countDisplay && (
+                        <span className="bg-[#22c55e] text-white px-2 py-1 rounded text-xs font-bold flex items-center gap-1">
+                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                            </svg>
+                            {countDisplay}
+                        </span>
+                    )}
+                </div>
+
+                {/* Hover Overlay - Full Info Card */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/90 to-black/70 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3">
+                    {/* HD/Status Badge - Top Right on Hover */}
+                    <div className="absolute top-2 right-2">
+                        <span className={`px-2 py-1 rounded text-xs font-bold ${manga.status === 'Publishing' ? 'bg-green-500 text-black' : 'bg-gray-600 text-white'}`}>
+                            {manga.status === 'Publishing' ? 'ONGOING' : 'FINISHED'}
+                        </span>
+                    </div>
+
+                    {/* Title */}
+                    <h3 className="text-sm font-bold text-white mb-1 line-clamp-2 leading-tight">
+                        {manga.title}
+                    </h3>
+
+                    {/* Rating + Info Row */}
+                    <div className="flex items-center gap-1.5 mb-2 flex-wrap">
+                        {manga.score > 0 && (
+                            <span className="text-[#facc15] text-xs font-bold flex items-center gap-0.5">
+                                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" /></svg>
+                                {manga.score.toFixed(1)}
+                            </span>
+                        )}
+                        {countDisplay && (
+                            <span className="text-gray-300 text-[10px] font-medium">{countDisplay}</span>
+                        )}
+                        <span className="text-gray-400 text-[10px]">{manga.type || 'Manga'}</span>
+                    </div>
+
+                    {/* Synopsis */}
+                    <p className="text-gray-400 text-[10px] line-clamp-2 mb-2 leading-relaxed">
+                        {manga.synopsis || 'No description available.'}
+                    </p>
+
+                    {/* Genres */}
+                    {manga.genres && manga.genres.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mb-3">
+                            {manga.genres.slice(0, 3).map((genre, idx) => (
+                                <span key={idx} className="border border-gray-600 text-gray-300 px-1.5 py-0.5 rounded text-[9px]">
+                                    {genre.name}
+                                </span>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Buttons - Read, Detail */}
+                    <div className="flex gap-2">
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onReadClick ? onReadClick(manga) : onClick(manga); }}
+                            className="flex-1 flex items-center justify-center gap-1 bg-[#d886ff] hover:bg-[#c06ae0] text-black py-1.5 rounded text-[9px] font-bold transition-colors"
+                        >
+                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+                            READ
+                        </button>
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onClick(manga); }}
+                            className="flex-1 flex items-center justify-center gap-1 bg-white/10 hover:bg-white/20 text-white py-1.5 rounded text-[9px] font-medium transition-colors"
+                        >
+                            <span className="w-2 h-2 bg-white rounded-full"></span>
+                            DETAIL
+                        </button>
                     </div>
                 </div>
             </div>
+
+            {/* Title Below Card */}
+            <h3 className="text-sm font-semibold text-gray-100 line-clamp-2 leading-tight group-hover:text-yorumi-accent transition-colors">
+                {manga.title}
+            </h3>
         </div>
     );
 };
