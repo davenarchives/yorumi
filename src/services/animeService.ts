@@ -263,5 +263,18 @@ export const animeService = {
         return fetchPromise;
     },
 
+    // Get airing schedule for a time range
+    async getAiringSchedule(start: number, end: number) {
+        const res = await fetch(`${API_BASE}/anilist/schedule?start=${start}&end=${end}`);
+        if (!res.ok) throw new Error('Failed to fetch schedule');
+        return res.json();
+    },
+
+    // Get list of genres
+    async getGenres() {
+        const res = await fetch(`${API_BASE}/anilist/genres`);
+        if (!res.ok) throw new Error('Failed to fetch genres');
+        return res.json();
+    },
 
 };

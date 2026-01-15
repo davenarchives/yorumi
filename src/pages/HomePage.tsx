@@ -8,6 +8,8 @@ import TrendingNow from '../components/TrendingNow';
 import PopularSeason from '../components/PopularSeason';
 import Carousel from '../components/Carousel';
 import SpotlightHero from '../components/SpotlightHero';
+import EstimatedSchedule from '../components/EstimatedSchedule';
+import Genres from '../components/Genres';
 import { useAnime } from '../hooks/useAnime';
 import type { Anime } from '../types/anime';
 
@@ -313,6 +315,16 @@ export default function HomePage() {
                                             onWatchClick={() => handleWatchClick(item)}
                                         />
                                     ))}
+                                </div>
+
+                                {/* Schedule and Genres Section */}
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
+                                    <div className="lg:col-span-2">
+                                        <EstimatedSchedule onAnimeClick={(id) => navigate(`/anime/${id}`)} />
+                                    </div>
+                                    <div>
+                                        <Genres onGenreClick={(genre) => navigate(`/genre/${encodeURIComponent(genre)}`)} />
+                                    </div>
                                 </div>
                             </>
                         )}

@@ -364,5 +364,100 @@ export const anilistService = {
             console.error('Error fetching manga by ID:', error);
             return null;
         }
+    },
+
+    async getAiringSchedule(startTime: number, endTime: number) {
+        const query = `
+            query ($airingAtGreater: Int, $airingAtLesser: Int) {
+                Page(page: 1, perPage: 50) {
+                    airingSchedules(airingAt_greater: $airingAtGreater, airingAt_lesser: $airingAtLesser, sort: TIME) {
+                        id
+                        airingAt
+                        episode
+                        media {
+                            id
+                            idMal
+                            title {
+                                romaji
+                                english
+                            }
+                            coverImage {
+                                large
+                            }
+                            format
+                            isAdult
+                        }
+                    }
+                }
+            }
+        `;
+
+        try {
+            const response = await axios.post(ANILIST_API_URL, {
+                query,
+                variables: { airingAtGreater: startTime, airingAtLesser: endTime }
+            });
+            // Filter out adult content
+            const schedules = response.data.data.Page.airingSchedules.filter(
+                (s: any) => !s.media.isAdult
+            );
+            return schedules;
+        } catch (error) {
+            console.error('Error fetching airing schedule:', error);
+            return [];
+        }
+    },
+
+    getGenres() {
+        // Static list of common anime genres with colors
+        return [
+            { name: 'Action', color: '#ef4444' },
+            { name: 'Adventure', color: '#f97316' },
+            { name: 'Comedy', color: '#eab308' },
+            { name: 'Drama', color: '#84cc16' },
+            { name: 'Fantasy', color: '#22c55e' },
+            { name: 'Horror', color: '#14b8a6' },
+            { name: 'Mystery', color: '#06b6d4' },
+            { name: 'Romance', color: '#ec4899' },
+            { name: 'Sci-Fi', color: '#8b5cf6' },
+            { name: 'Slice of Life', color: '#a855f7' },
+            { name: 'Sports', color: '#f43f5e' },
+            { name: 'Supernatural', color: '#6366f1' },
+            { name: 'Thriller', color: '#64748b' },
+            { name: 'Mecha', color: '#78716c' },
+            { name: 'Music', color: '#d946ef' },
+            { name: 'Psychological', color: '#0ea5e9' },
+            { name: 'Ecchi', color: '#fb7185' },
+            { name: 'Isekai', color: '#4ade80' },
+        ];
+    },
+
+    async getAnimeByGenre(genre: string, page: number = 1, perPage: number = 24) {
+        const query = `
+            query ($genre: String, $page: Int, $perPage: Int) {
+                Page(page: $page, perPage: $perPage) {
+                    pageInfo {
+                        total
+                        currentPage
+                        lastPage
+                        hasNextPage
+                    }
+                    media(type: ANIME, genre: $genre, sort: POPULARITY_DESC, isAdult: false) {
+                        ${MEDIA_FIELDS}
+                    }
+                }
+            }
+        `;
+
+        try {
+            const response = await axios.post(ANILIST_API_URL, {
+                query,
+                variables: { genre, page, perPage }
+            });
+            return response.data.data.Page;
+        } catch (error) {
+            console.error('Error fetching anime by genre:', error);
+            return { media: [], pageInfo: {} };
+        }
     }
 };

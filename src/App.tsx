@@ -6,6 +6,7 @@ import AnimeDetailsPage from './pages/AnimeDetailsPage';
 import WatchPage from './pages/WatchPage';
 import SearchPage from './pages/SearchPage';
 import MangaPage from './pages/MangaPage';
+import GenrePage from './pages/GenrePage';
 import { useAnime } from './hooks/useAnime';
 
 function App() {
@@ -67,6 +68,7 @@ function App() {
         <Route path="/watch/:id" element={<WatchPage />} />
         <Route path="/search" element={<SearchPage />} />
         <Route path="/manga" element={<MangaPage />} />
+        <Route path="/genre/:name" element={<GenrePage />} />
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

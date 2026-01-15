@@ -178,4 +178,50 @@ router.post('/search', async (req, res) => {
     }
 });
 
+// Get airing schedule for a time range
+router.get('/schedule', async (req, res) => {
+    try {
+        // Default to current day (start of day to end of day in UTC)
+        const now = Math.floor(Date.now() / 1000);
+        const startOfDay = now - (now % 86400); // Start of current UTC day
+
+        const start = req.query.start ? parseInt(req.query.start as string) : startOfDay;
+        const end = req.query.end ? parseInt(req.query.end as string) : startOfDay + 86400;
+
+        const data = await anilistService.getAiringSchedule(start, end);
+        res.json(data);
+    } catch (error) {
+        console.error('Error in schedule route:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Get list of genres
+router.get('/genres', (req, res) => {
+    try {
+        const genres = anilistService.getGenres();
+        res.json(genres);
+    } catch (error) {
+        console.error('Error in genres route:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Get anime by genre
+router.get('/genre/:name', async (req, res) => {
+    try {
+        const genre = req.params.name;
+        const page = req.query.page ? parseInt(req.query.page as string) : 1;
+        const perPage = req.query.limit ? parseInt(req.query.limit as string) : 24;
+
+        const data = await anilistService.getAnimeByGenre(genre, page, perPage);
+        res.json(data);
+    } catch (error) {
+        console.error('Error in genre route:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 export default router;
+
+
