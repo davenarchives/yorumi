@@ -295,10 +295,10 @@ export default function WatchPage() {
                     </div>
 
                     {/* Metadata & Controls Bar (Below Player) */}
-                    <div className="p-6">
+                    <div className="p-4">
                         {/* Title Info */}
-                        <div className="mb-6">
-                            <h2 className="text-2xl font-bold text-white mb-1">{animeData.title}</h2>
+                        <div className="mb-3">
+                            <h2 className="text-lg font-bold text-white mb-1">{animeData.title}</h2>
                             <div className="flex items-baseline gap-3">
                                 <p className="text-yellow-500 font-medium">Episode {epNum}</p>
                                 <p className="text-gray-400 text-sm">{currentEpTitle}</p>
