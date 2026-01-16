@@ -2,6 +2,89 @@ import axios from 'axios';
 
 const ANILIST_API_URL = 'https://graphql.anilist.co';
 
+// ============================================================================
+// CACHING LAYER - Reduces API calls by caching responses
+// ============================================================================
+interface CacheEntry {
+    data: any;
+    timestamp: number;
+    ttl: number;
+}
+
+const cache = new Map<string, CacheEntry>();
+const CACHE_TTL = {
+    trending: 5 * 60 * 1000,      // 5 minutes for trending
+    seasonal: 10 * 60 * 1000,     // 10 minutes for seasonal
+    popular: 30 * 60 * 1000,      // 30 minutes for all-time popular
+    top: 30 * 60 * 1000,          // 30 minutes for top rated
+    search: 5 * 60 * 1000,        // 5 minutes for search results
+    details: 60 * 60 * 1000,      // 1 hour for anime/manga details
+    schedule: 5 * 60 * 1000,      // 5 minutes for schedule
+    default: 10 * 60 * 1000       // 10 minutes default
+};
+
+function getCacheKey(type: string, ...args: any[]): string {
+    return `${type}:${JSON.stringify(args)}`;
+}
+
+function getFromCache(key: string): any | null {
+    const entry = cache.get(key);
+    if (!entry) return null;
+
+    if (Date.now() - entry.timestamp > entry.ttl) {
+        cache.delete(key);
+        return null;
+    }
+
+    return entry.data;
+}
+
+function setCache(key: string, data: any, ttl: number): void {
+    cache.set(key, { data, timestamp: Date.now(), ttl });
+
+    // Clean old entries periodically (keep cache size manageable)
+    if (cache.size > 100) {
+        const now = Date.now();
+        for (const [k, v] of cache.entries()) {
+            if (now - v.timestamp > v.ttl) {
+                cache.delete(k);
+            }
+        }
+    }
+}
+
+// ============================================================================
+// RATE LIMITING - Prevents hitting AniList's rate limit
+// ============================================================================
+let lastRequestTime = 0;
+const MIN_REQUEST_INTERVAL = 500; // 500ms between requests (max 2/sec)
+
+async function rateLimitedRequest(query: string, variables: any): Promise<any> {
+    const now = Date.now();
+    const timeSinceLastRequest = now - lastRequestTime;
+
+    if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
+        await new Promise(resolve => setTimeout(resolve, MIN_REQUEST_INTERVAL - timeSinceLastRequest));
+    }
+
+    lastRequestTime = Date.now();
+
+    try {
+        const response = await axios.post(ANILIST_API_URL, { query, variables });
+        return response.data;
+    } catch (error: any) {
+        // Handle rate limit error specifically
+        if (error.response?.status === 429) {
+            console.warn('AniList rate limit hit, waiting 60 seconds...');
+            await new Promise(resolve => setTimeout(resolve, 60000));
+            // Retry once after waiting
+            const response = await axios.post(ANILIST_API_URL, { query, variables });
+            return response.data;
+        }
+        throw error;
+    }
+}
+
 // Common media fields fragment
 const MEDIA_FIELDS = `
     id
@@ -57,6 +140,7 @@ const MEDIA_FIELDS = `
     }
 `;
 
+
 export const anilistService = {
     async getCoverImages(malIds: number[]) {
         const query = `
@@ -88,6 +172,10 @@ export const anilistService = {
     },
 
     async getTrendingAnime(page: number = 1, perPage: number = 10) {
+        const cacheKey = getCacheKey('trending_anime', page, perPage);
+        const cached = getFromCache(cacheKey);
+        if (cached) return cached;
+
         const query = `
             query ($page: Int, $perPage: Int) {
                 Page(page: $page, perPage: $perPage) {
@@ -105,11 +193,10 @@ export const anilistService = {
         `;
 
         try {
-            const response = await axios.post(ANILIST_API_URL, {
-                query,
-                variables: { page, perPage }
-            });
-            return response.data.data.Page;
+            const response = await rateLimitedRequest(query, { page, perPage });
+            const result = response.data.Page;
+            setCache(cacheKey, result, CACHE_TTL.trending);
+            return result;
         } catch (error) {
             console.error('Error fetching trending anime:', error);
             return { media: [], pageInfo: {} };
@@ -126,6 +213,10 @@ export const anilistService = {
         else if (month >= 4 && month <= 6) season = 'SPRING';
         else if (month >= 7 && month <= 9) season = 'SUMMER';
         else season = 'FALL';
+
+        const cacheKey = getCacheKey('popular_season', page, perPage, season, year);
+        const cached = getFromCache(cacheKey);
+        if (cached) return cached;
 
         const query = `
             query ($page: Int, $perPage: Int, $season: MediaSeason, $seasonYear: Int) {
@@ -144,11 +235,10 @@ export const anilistService = {
         `;
 
         try {
-            const response = await axios.post(ANILIST_API_URL, {
-                query,
-                variables: { page, perPage, season, seasonYear: year }
-            });
-            return response.data.data.Page;
+            const response = await rateLimitedRequest(query, { page, perPage, season, seasonYear: year });
+            const result = response.data.Page;
+            setCache(cacheKey, result, CACHE_TTL.seasonal);
+            return result;
         } catch (error) {
             console.error('Error fetching popular this season:', error);
             return { media: [], pageInfo: {} };
@@ -156,6 +246,10 @@ export const anilistService = {
     },
 
     async getTopAnime(page: number = 1, perPage: number = 24) {
+        const cacheKey = getCacheKey('top_anime', page, perPage);
+        const cached = getFromCache(cacheKey);
+        if (cached) return cached;
+
         const query = `
             query ($page: Int, $perPage: Int) {
                 Page(page: $page, perPage: $perPage) {
@@ -173,18 +267,21 @@ export const anilistService = {
         `;
 
         try {
-            const response = await axios.post(ANILIST_API_URL, {
-                query,
-                variables: { page, perPage }
-            });
-            return response.data.data.Page;
+            const response = await rateLimitedRequest(query, { page, perPage });
+            const result = response.data.Page;
+            setCache(cacheKey, result, CACHE_TTL.popular);
+            return result;
         } catch (error) {
             console.error('Error fetching top anime:', error);
-            throw error; // Propagate error to route handler
+            throw error;
         }
     },
 
     async getTopManga(page: number = 1, perPage: number = 24) {
+        const cacheKey = getCacheKey('top_manga', page, perPage);
+        const cached = getFromCache(cacheKey);
+        if (cached) return cached;
+
         const query = `
             query ($page: Int, $perPage: Int) {
                 Page(page: $page, perPage: $perPage) {
@@ -202,11 +299,10 @@ export const anilistService = {
         `;
 
         try {
-            const response = await axios.post(ANILIST_API_URL, {
-                query,
-                variables: { page, perPage }
-            });
-            return response.data.data.Page;
+            const response = await rateLimitedRequest(query, { page, perPage });
+            const result = response.data.Page;
+            setCache(cacheKey, result, CACHE_TTL.top);
+            return result;
         } catch (error) {
             console.error('Error fetching top manga:', error);
             return { media: [], pageInfo: {} };
@@ -214,6 +310,10 @@ export const anilistService = {
     },
 
     async getPopularManga(page: number = 1, perPage: number = 24) {
+        const cacheKey = getCacheKey('popular_manga', page, perPage);
+        const cached = getFromCache(cacheKey);
+        if (cached) return cached;
+
         const query = `
             query ($page: Int, $perPage: Int) {
                 Page(page: $page, perPage: $perPage) {
@@ -231,11 +331,10 @@ export const anilistService = {
         `;
 
         try {
-            const response = await axios.post(ANILIST_API_URL, {
-                query,
-                variables: { page, perPage }
-            });
-            return response.data.data.Page;
+            const response = await rateLimitedRequest(query, { page, perPage });
+            const result = response.data.Page;
+            setCache(cacheKey, result, CACHE_TTL.popular);
+            return result;
         } catch (error) {
             console.error('Error fetching popular manga:', error);
             return { media: [], pageInfo: {} };
@@ -243,6 +342,10 @@ export const anilistService = {
     },
 
     async getTrendingManga(page: number = 1, perPage: number = 10) {
+        const cacheKey = getCacheKey('trending_manga', page, perPage);
+        const cached = getFromCache(cacheKey);
+        if (cached) return cached;
+
         const query = `
             query ($page: Int, $perPage: Int) {
                 Page(page: $page, perPage: $perPage) {
@@ -260,11 +363,10 @@ export const anilistService = {
         `;
 
         try {
-            const response = await axios.post(ANILIST_API_URL, {
-                query,
-                variables: { page, perPage }
-            });
-            return response.data.data.Page;
+            const response = await rateLimitedRequest(query, { page, perPage });
+            const result = response.data.Page;
+            setCache(cacheKey, result, CACHE_TTL.trending);
+            return result;
         } catch (error) {
             console.error('Error fetching trending manga:', error);
             return { media: [], pageInfo: {} };
@@ -272,6 +374,10 @@ export const anilistService = {
     },
 
     async getPopularManhwa(page: number = 1, perPage: number = 24) {
+        const cacheKey = getCacheKey('popular_manhwa', page, perPage);
+        const cached = getFromCache(cacheKey);
+        if (cached) return cached;
+
         const query = `
             query ($page: Int, $perPage: Int) {
                 Page(page: $page, perPage: $perPage) {
@@ -289,11 +395,10 @@ export const anilistService = {
         `;
 
         try {
-            const response = await axios.post(ANILIST_API_URL, {
-                query,
-                variables: { page, perPage }
-            });
-            return response.data.data.Page;
+            const response = await rateLimitedRequest(query, { page, perPage });
+            const result = response.data.Page;
+            setCache(cacheKey, result, CACHE_TTL.popular);
+            return result;
         } catch (error) {
             console.error('Error fetching popular manhwa:', error);
             return { media: [], pageInfo: {} };
