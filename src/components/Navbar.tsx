@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Shuffle } from 'lucide-react';
 
 interface NavbarProps {
     activeTab: 'anime' | 'manga';
@@ -20,6 +22,7 @@ export default function Navbar({
     onLogoClick,
 }: NavbarProps) {
     const searchInputRef = useRef<HTMLInputElement>(null);
+    const navigate = useNavigate();
 
     const [isScrolled, setIsScrolled] = useState(false);
 
@@ -45,15 +48,22 @@ export default function Navbar({
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, []);
 
+    // Random anime handler
+    const handleRandomAnime = async () => {
+        // Generate a random ID between 1 and 50000 (covers most anime)
+        const randomId = Math.floor(Math.random() * 50000) + 1;
+        navigate(`/anime/${randomId}`);
+    };
+
     return (
         <nav className={`fixed top-0 left-0 right-0 z-[100] flex items-center justify-between px-8 transition-colors duration-500 ${isScrolled ? 'bg-[#0a0a0a]/95 backdrop-blur-md border-b border-white/5 py-3' : 'bg-gradient-to-b from-black via-black/60 to-transparent border-transparent py-4'
             }`}>
-            {/* LEFT: Logo & Search */}
-            <div className="flex items-center gap-6 md:gap-8 flex-1">
+            {/* LEFT: Logo + Search + Toggle + Random */}
+            <div className="flex items-center gap-6">
                 {/* Logo */}
                 <div
                     onClick={onLogoClick || onClearSearch}
-                    className="flex items-center cursor-pointer hover:opacity-90 transition-opacity select-none"
+                    className="flex items-center cursor-pointer hover:opacity-90 transition-opacity select-none shrink-0"
                     role="button"
                     tabIndex={0}
                 >
@@ -98,10 +108,8 @@ export default function Navbar({
                         </div>
                     </div>
                 </form>
-            </div >
 
-            {/* CENTER: Anime/Manga Toggle */}
-            < div className="flex items-center justify-center flex-1" >
+                {/* Anime/Manga Toggle - Original Style */}
                 <div className="flex items-center bg-[#1c1c1c] rounded-lg p-1">
                     <button
                         onClick={() => { onClearSearch(); onTabChange('anime'); }}
@@ -122,21 +130,31 @@ export default function Navbar({
                         Manga
                     </button>
                 </div>
-            </div >
+
+                {/* Randomize Button */}
+                <button
+                    onClick={handleRandomAnime}
+                    className="flex items-center gap-2 px-4 py-1.5 rounded-md bg-white/5 hover:bg-yorumi-accent hover:text-[#0a0a0a] text-gray-400 transition-all duration-300 text-sm font-bold uppercase"
+                    title="Random Anime"
+                >
+                    <Shuffle className="w-4 h-4" />
+                    Randomize
+                </button>
+            </div>
 
             {/* RIGHT: Login */}
-            < div className="flex items-center justify-end gap-4 flex-1" >
+            <div className="flex items-center justify-end gap-4 shrink-0">
                 {/* Mobile Search Icon (only visible on small screens) */}
-                < button className="md:hidden text-white p-2" >
+                <button className="md:hidden text-white p-2">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
                         <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
                     </svg>
-                </button >
+                </button>
 
                 <button className="bg-white/10 hover:bg-white/20 text-white border border-white/5 font-bold uppercase text-xs tracking-wider px-6 py-2.5 rounded transition-colors">
                     Login
                 </button>
-            </div >
-        </nav >
+            </div>
+        </nav>
     );
 }
