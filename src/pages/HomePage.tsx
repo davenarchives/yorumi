@@ -86,7 +86,7 @@ export default function HomePage() {
 
                 {/* View Mode: Continue Watching */}
                 {anime.viewMode === 'continue_watching' ? (
-                    <div className="pt-24 pb-12 px-8 min-h-screen">
+                    <div className="pb-12 min-h-screen">
                         <div className="flex items-center gap-4 mb-8">
                             <button
                                 onClick={anime.closeViewAll}
@@ -135,21 +135,23 @@ export default function HomePage() {
                     </div>
                 ) : anime.viewMode === 'trending' ? (
                     /* View Mode: Trending */
-                    <div className="pt-24">
-                        <div className="flex items-center gap-2 mb-6">
+                    <div className="pb-12 min-h-screen">
+                        <div className="flex items-center gap-4 mb-8">
                             <button
                                 onClick={anime.closeViewAll}
                                 className="p-2 rounded-full bg-white/5 hover:bg-white/10 transition-colors"
                             >
                                 <ArrowLeft className="w-5 h-5 text-white" />
                             </button>
-                            <h2 className="text-xl font-bold border-l-4 border-yorumi-accent pl-3 text-white">Trending Now</h2>
+                            <h2 className="text-2xl font-black text-white tracking-wide uppercase">Trending Now</h2>
                         </div>
                         {anime.viewAllLoading ? (
-                            <LoadingSpinner size="lg" text="Loading Trending..." />
+                            <div className="flex items-center justify-center py-20">
+                                <LoadingSpinner size="lg" text="Loading..." />
+                            </div>
                         ) : (
                             <>
-                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6 mb-8">
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
                                     {anime.viewAllAnime.map((item) => (
                                         <AnimeCard
                                             key={item.mal_id}
@@ -162,27 +164,30 @@ export default function HomePage() {
                                     currentPage={anime.viewAllPagination.current_page}
                                     lastPage={anime.viewAllPagination.last_visible_page}
                                     onPageChange={anime.changeViewAllPage}
+                                    isLoading={anime.viewAllLoading}
                                 />
                             </>
                         )}
                     </div>
                 ) : anime.viewMode === 'seasonal' ? (
                     /* View Mode: Seasonal */
-                    <div className="pt-24">
-                        <div className="flex items-center gap-2 mb-6">
+                    <div className="pb-12 min-h-screen">
+                        <div className="flex items-center gap-4 mb-8">
                             <button
                                 onClick={anime.closeViewAll}
                                 className="p-2 rounded-full bg-white/5 hover:bg-white/10 transition-colors"
                             >
                                 <ArrowLeft className="w-5 h-5 text-white" />
                             </button>
-                            <h2 className="text-xl font-bold border-l-4 border-yorumi-accent pl-3 text-white">Popular This Season</h2>
+                            <h2 className="text-2xl font-black text-white tracking-wide uppercase">Popular This Season</h2>
                         </div>
                         {anime.viewAllLoading ? (
-                            <LoadingSpinner size="lg" text="Loading Popular..." />
+                            <div className="flex items-center justify-center py-20">
+                                <LoadingSpinner size="lg" text="Loading..." />
+                            </div>
                         ) : (
                             <>
-                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6 mb-8">
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
                                     {anime.viewAllAnime.map((item) => (
                                         <AnimeCard
                                             key={item.mal_id}
@@ -195,27 +200,30 @@ export default function HomePage() {
                                     currentPage={anime.viewAllPagination.current_page}
                                     lastPage={anime.viewAllPagination.last_visible_page}
                                     onPageChange={anime.changeViewAllPage}
+                                    isLoading={anime.viewAllLoading}
                                 />
                             </>
                         )}
                     </div>
                 ) : anime.viewMode === 'popular' ? (
                     /* View Mode: All-Time Popular */
-                    <div className="pt-20"> {/* Reduced from pt-24 to fix gap */}
-                        <div className="flex items-center gap-2 mb-4"> {/* Reduced mb-6 to mb-4 */}
+                    <div className="pb-12 min-h-screen">
+                        <div className="flex items-center gap-4 mb-8">
                             <button
                                 onClick={anime.closeViewAll}
                                 className="p-2 rounded-full bg-white/5 hover:bg-white/10 transition-colors"
                             >
                                 <ArrowLeft className="w-5 h-5 text-white" />
                             </button>
-                            <h2 className="text-xl font-bold border-l-4 border-yorumi-accent pl-3 text-white">All-Time Popular</h2>
+                            <h2 className="text-2xl font-black text-white tracking-wide uppercase">All-Time Popular</h2>
                         </div>
                         {anime.viewAllLoading ? (
-                            <LoadingSpinner size="lg" text="Loading Popular..." />
+                            <div className="flex items-center justify-center py-20">
+                                <LoadingSpinner size="lg" text="Loading..." />
+                            </div>
                         ) : (
                             <>
-                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6 mb-8">
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
                                     {anime.viewAllAnime.map((item) => (
                                         <AnimeCard
                                             key={item.mal_id}
@@ -228,6 +236,7 @@ export default function HomePage() {
                                     currentPage={anime.viewAllPagination.current_page}
                                     lastPage={anime.viewAllPagination.last_visible_page}
                                     onPageChange={anime.changeViewAllPage}
+                                    isLoading={anime.viewAllLoading}
                                 />
                             </>
                         )}
