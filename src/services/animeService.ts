@@ -41,6 +41,7 @@ const mapAnilistToAnime = (item: any) => {
         },
         anilist_banner_image: item.bannerImage,
         anilist_cover_image: item.coverImage?.extraLarge || item.coverImage?.large,
+        countryOfOrigin: item.countryOfOrigin,
         nextAiringEpisode: item.nextAiringEpisode ? {
             episode: item.nextAiringEpisode.episode,
             timeUntilAiring: item.nextAiringEpisode.timeUntilAiring ?? (item.nextAiringEpisode.airingAt ? item.nextAiringEpisode.airingAt - Math.floor(Date.now() / 1000) : 0)
@@ -206,10 +207,36 @@ export const animeService = {
         return res.json();
     },
 
-    // Get HiAnime spotlight titles
-    async getHiAnimeSpotlightTitles() {
-        const res = await fetch(`${API_BASE}/hianime/spotlight`);
-        return res.json();
+    // Get HiAnime spotlight (enriched with AniList data)
+    async getHiAnimeSpotlight() {
+        try {
+            const res = await fetch(`${API_BASE}/hianime/spotlight`);
+            if (!res.ok) throw new Error('Failed to fetch HiAnime spotlight');
+            const { spotlight } = await res.json();
+
+            // Map to Anime interface
+            const data = spotlight.map((item: any) => {
+                // Base metadata from AniList
+                const anime = mapAnilistToAnime(item.anilist || {});
+
+                // Override images with HiAnime high-res versions
+                if (item.banner) {
+                    anime.anilist_banner_image = item.banner;
+                }
+                if (item.poster) {
+                    anime.images.jpg.large_image_url = item.poster;
+                    // Also update coverImage reference if used
+                    anime.anilist_cover_image = item.poster;
+                }
+                return anime;
+            });
+
+            return { data };
+        } catch (error) {
+            console.error('Error in getHiAnimeSpotlight:', error);
+            // Fallback to trending
+            return this.getTrendingAnime();
+        }
     },
 
     // Search AniList (returns raw AniList data for spotlight resolution)

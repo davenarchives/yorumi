@@ -109,45 +109,10 @@ export function AnimeProvider({ children }: { children: ReactNode }) {
         const fetchSpotlight = async () => {
             if (spotlightAnime.length > 0) return;
             try {
-                const { titles } = await animeService.getHiAnimeSpotlightTitles();
-                if (titles && titles.length > 0) {
-                    const limitedTitles = titles.slice(0, 8);
-
-                    // Parallelize the search for each title
-                    const results = await Promise.all(
-                        limitedTitles.map(async (title: string) => {
-                            try {
-                                const searchRes = await animeService.searchAnilist(title);
-                                if (searchRes && searchRes.length > 0) {
-                                    const aniItem = searchRes[0];
-                                    return {
-                                        mal_id: aniItem.idMal || aniItem.id,
-                                        title: aniItem.title.english || aniItem.title.romaji || aniItem.title.native,
-                                        images: {
-                                            jpg: { image_url: aniItem.coverImage.large, large_image_url: aniItem.coverImage.extraLarge }
-                                        },
-                                        synopsis: aniItem.description?.replace(/<[^>]*>/g, '') || '',
-                                        type: aniItem.format,
-                                        episodes: aniItem.episodes,
-                                        score: aniItem.averageScore ? aniItem.averageScore / 10 : 0,
-                                        status: aniItem.status,
-                                        duration: aniItem.duration ? `${aniItem.duration} min` : 'Unknown',
-                                        rating: 'Unknown',
-                                        genres: aniItem.genres?.map((g: string) => ({ name: g, mal_id: 0 })) || [],
-                                        anilist_banner_image: aniItem.bannerImage,
-                                        anilist_cover_image: aniItem.coverImage.extraLarge || aniItem.coverImage.large,
-                                        latestEpisode: aniItem.nextAiringEpisode ? aniItem.nextAiringEpisode.episode - 1 : undefined
-                                    } as Anime;
-                                }
-                            } catch (e) {
-                                return null;
-                            }
-                            return null;
-                        })
-                    );
-
-                    const resolvedAnime = results.filter((item): item is Anime => item !== null);
-                    if (resolvedAnime.length > 0) setSpotlightAnime(resolvedAnime);
+                // Use the new service that fetches enriched data from backend
+                const { data } = await animeService.getHiAnimeSpotlight();
+                if (data && data.length > 0) {
+                    setSpotlightAnime(data);
                 }
             } catch (e) {
                 console.error("Failed to fetch HiAnime spotlight", e);
