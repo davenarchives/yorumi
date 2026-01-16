@@ -4,6 +4,8 @@ import MangaSpotlight from '../components/MangaSpotlight';
 import PopularManhwa from '../components/PopularManhwa';
 import AllTimePopularManga from '../components/AllTimePopularManga';
 import Top100Manga from '../components/Top100Manga';
+import LatestMangaUpdates from '../components/LatestMangaUpdates';
+import Genres from '../components/Genres';
 import MangaCard from '../components/MangaCard';
 import Pagination from '../components/Pagination';
 import { useManga } from '../hooks/useManga';
@@ -105,6 +107,25 @@ export default function MangaPage() {
                 onMangaClick={handleSpotlightClick}
                 onViewAll={() => manga.openViewAll('top_100')}
             />
+
+            {/* Latest Updates & Genres Section */}
+            <div className="container mx-auto px-4 mt-12 grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Latest Updates (Left - 2/3) */}
+                <div className="lg:col-span-2">
+                    <LatestMangaUpdates
+                        onMangaClick={handleSpotlightClick}
+                    />
+                </div>
+
+                {/* Genres (Right - 1/3) */}
+                <div>
+                    {/* We can reuse the Genres component but we need to ensure it links to manga genres if distinct? 
+                         Actually existing Genres component links to /genre/:name which is generic. 
+                         If we want Manga specific genres, we might need a distinct route or filter. 
+                         But for now, reusing the existing component is fine. */}
+                    <Genres onGenreClick={(genre) => console.log('Genre clicked:', genre)} />
+                </div>
+            </div>
         </div>
     );
 }
