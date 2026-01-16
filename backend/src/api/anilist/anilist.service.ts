@@ -406,13 +406,13 @@ export const anilistService = {
     },
 
     async getRandomAnime() {
-        // Fetch a random page from the top 5000 popular anime to ensure we get a valid, decent quality anime
-        // 5000 / 1 per page = 5000 pages
-        const randomPage = Math.floor(Math.random() * 5000) + 1;
+        // Fetch a random page of 50 items from the top 5000 popular anime
+        // 5000 / 50 per page = 100 pages
+        const randomPage = Math.floor(Math.random() * 100) + 1;
 
         const query = `
             query ($page: Int) {
-                Page(page: $page, perPage: 1) {
+                Page(page: $page, perPage: 50) {
                     media(type: ANIME, sort: POPULARITY_DESC, isAdult: false) {
                         id
                     }
@@ -422,11 +422,12 @@ export const anilistService = {
 
         try {
             const response = await rateLimitedRequest(query, { page: randomPage });
-            const media = response.data.Page.media[0];
-            return media ? { id: media.id } : { id: 1 }; // Fallback to Cowboy Bebop (ID 1) if fails
+            const mediaList = response.data.Page.media;
+            // Return array of IDs or fallback
+            return mediaList.length > 0 ? mediaList.map((m: any) => ({ id: m.id })) : [{ id: 1 }];
         } catch (error) {
             console.error('Error fetching random anime:', error);
-            return { id: 1 };
+            return [{ id: 1 }];
         }
     },
 
