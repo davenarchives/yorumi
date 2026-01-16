@@ -185,7 +185,7 @@ export async function getChapterList(mangaId: string): Promise<Chapter[]> {
             const uploadDate = $el.find('.update_time').text().trim();
 
             // Extract chapter ID from URL
-            const chapterId = chapterUrl.split('/').pop() || '';
+            const chapterId = chapterUrl.replace(/\/$/, '').split('/').pop() || '';
 
             if (chapterTitle && chapterUrl) {
                 chapters.push({
@@ -209,6 +209,9 @@ export async function getChapterList(mangaId: string): Promise<Chapter[]> {
  * Uses Puppeteer to handle JavaScript rendering and extraction
  */
 export async function getChapterPages(chapterUrl: string): Promise<ChapterPage[]> {
+    // Regex optimization removed by user request
+    // Falling back to Puppeteer directly
+
     let browser = null;
     try {
         // Launch Puppeteer headless browser
@@ -234,42 +237,25 @@ export async function getChapterPages(chapterUrl: string): Promise<ChapterPage[]
         await page.goto(chapterUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
 
         // Wait a bit for scripts to populate variables
-        // We use a small delay because we're not waiting for specific network idle
         await new Promise(resolve => setTimeout(resolve, 2000));
 
         // Evaluate page context to extract global variables
         const imageUrls = await page.evaluate(() => {
-            // Check thzq (common variable name on MangaKatana)
+            // Check common variable names
             // @ts-ignore
-            if (window.thzq && Array.isArray(window.thzq) && window.thzq.length > 0) {
-                // @ts-ignore
-                return window.thzq;
-            }
-
-            // Check ytaw
+            if (window.thzq && Array.isArray(window.thzq) && window.thzq.length > 0) return window.thzq;
             // @ts-ignore
-            if (window.ytaw && Array.isArray(window.ytaw) && window.ytaw.length > 0) {
-                // @ts-ignore
-                return window.ytaw;
-            }
-
-            // Check htnc
+            if (window.ytaw && Array.isArray(window.ytaw) && window.ytaw.length > 0) return window.ytaw;
             // @ts-ignore
-            if (window.htnc && Array.isArray(window.htnc) && window.htnc.length > 0) {
-                // @ts-ignore
-                return window.htnc;
-            }
+            if (window.htnc && Array.isArray(window.htnc) && window.htnc.length > 0) return window.htnc;
 
             // Fallback: look for script tags that contain array definitions
-            // This catches obfuscated variable names
             const scripts = Array.from(document.querySelectorAll('script'));
             for (const script of scripts) {
                 const content = script.textContent || '';
-                // Pattern: var [xyz] = ['url1', 'url2', ...]
                 const match = content.match(/var\s+\w+\s*=\s*\[(['"].*?['"])\]/);
                 if (match) {
                     try {
-                        // Unsafe eval but running in sandbox context
                         const urls = eval(`[${match[1]}]`);
                         if (Array.isArray(urls) && urls.length > 0 && typeof urls[0] === 'string' && urls[0].includes('http')) {
                             return urls;

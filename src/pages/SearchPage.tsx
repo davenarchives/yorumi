@@ -58,7 +58,7 @@ export default function SearchPage() {
                             <MangaCard
                                 key={item.mal_id}
                                 manga={item}
-                                onClick={() => { }} // Manga details not refactored yet
+                                onClick={() => navigate(`/manga/${item.mal_id}`, { state: { manga: item } })}
                             />
                         ))
                     )}

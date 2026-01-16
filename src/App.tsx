@@ -3,6 +3,7 @@ import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-
 import Navbar from './components/Navbar';
 import HomePage from './pages/HomePage';
 import AnimeDetailsPage from './pages/AnimeDetailsPage';
+import MangaDetailsPage from './pages/MangaDetailsPage';
 import WatchPage from './pages/WatchPage';
 import SearchPage from './pages/SearchPage';
 import MangaPage from './pages/MangaPage';
@@ -15,8 +16,9 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const { closeViewAll } = useAnime();
 
-  // Derive active tab from URL
-  const activeTab = location.pathname.startsWith('/manga') ? 'manga' : 'anime';
+  // Derive active tab from URL or Query Params (to persist state on Search Page)
+  const queryParams = new URLSearchParams(location.search);
+  const activeTab = location.pathname.startsWith('/manga') || queryParams.get('type') === 'manga' ? 'manga' : 'anime';
 
   // Sync Search Query if we are on search page
   useEffect(() => {
@@ -41,7 +43,15 @@ function App() {
 
   const handleLogoClick = () => {
     closeViewAll();
-    navigate('/');
+    navigate(activeTab === 'manga' ? '/manga' : '/');
+  };
+
+  const handleClearSearch = () => {
+    setSearchQuery('');
+    // If on search page, navigate back to home
+    if (location.pathname === '/search') {
+      navigate(activeTab === 'manga' ? '/manga' : '/');
+    }
   };
 
   return (
@@ -58,7 +68,7 @@ function App() {
         onTabChange={handleTabChange}
         onSearchChange={setSearchQuery}
         onSearchSubmit={handleSearchSubmit}
-        onClearSearch={() => setSearchQuery('')}
+        onClearSearch={handleClearSearch}
         onLogoClick={handleLogoClick}
       />
 
@@ -68,6 +78,7 @@ function App() {
         <Route path="/watch/:id" element={<WatchPage />} />
         <Route path="/search" element={<SearchPage />} />
         <Route path="/manga" element={<MangaPage />} />
+        <Route path="/manga/:id" element={<MangaDetailsPage />} />
         <Route path="/genre/:name" element={<GenrePage />} />
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />

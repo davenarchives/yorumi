@@ -29,6 +29,7 @@ export function useManga() {
     const mangaIdCache = useRef(new Map<number | string, string>());
     const mangaChaptersCache = useRef(new Map<string, MangaChapter[]>());
     const chapterPagesCache = useRef(new Map<string, Promise<MangaPage[]>>());
+    const latestChapterId = useRef<string | null>(null);
 
     // Fetch manga (Hot Updates for grid)
     useEffect(() => {
@@ -129,18 +130,44 @@ export function useManga() {
             if (typeof manga.mal_id === 'string') {
                 mangakatanaId = manga.mal_id;
                 mangaIdCache.current.set(manga.mal_id, mangakatanaId);
+            } else if (manga.scraper_id) {
+                // Optimization: We already know the scraper ID from the service enrichment!
+                mangakatanaId = manga.scraper_id;
+                mangaIdCache.current.set(manga.mal_id, mangakatanaId);
             } else if (mangaIdCache.current.has(manga.mal_id)) {
                 // Check cache first
                 mangakatanaId = mangaIdCache.current.get(manga.mal_id)!;
             }
 
             if (!mangakatanaId) {
-                // Search scraper for chapters using title
-                const searchData = await mangaService.searchMangaScraper(manga.title);
-                if (searchData.data && searchData.data.length > 0) {
-                    const firstResult = searchData.data[0];
-                    mangakatanaId = firstResult.id;
-                    mangaIdCache.current.set(manga.mal_id, firstResult.id);
+                if (!mangakatanaId) {
+                    // Search scraper for chapters using title
+                    // STRATEGY: Try multiple title variations to find a match
+
+                    const titlesToTry = [
+                        manga.title,
+                        manga.title_english,
+                        manga.title_romaji,
+                        manga.title_native
+                    ].filter(Boolean) as string[];
+
+                    // Remove duplicates
+                    const uniqueTitles = [...new Set(titlesToTry)];
+
+                    for (const title of uniqueTitles) {
+                        try {
+                            const searchData = await mangaService.searchMangaScraper(title);
+                            if (searchData.data && searchData.data.length > 0) {
+                                const firstResult = searchData.data[0];
+                                mangakatanaId = firstResult.id;
+                                mangaIdCache.current.set(manga.mal_id, firstResult.id);
+                                console.log(`Found manga match using title: "${title}" -> ${mangakatanaId}`);
+                                break; // Stop after first match
+                            }
+                        } catch (e) {
+                            console.warn(`Search failed for title: ${title}`);
+                        }
+                    }
                 }
             }
 
@@ -163,26 +190,46 @@ export function useManga() {
     };
 
     const loadMangaChapter = async (chapter: MangaChapter) => {
+        // Prevent race conditions: only process the latest request
+        const requestId = chapter.id;
+        latestChapterId.current = requestId;
+
         setCurrentMangaChapter(chapter);
         setMangaPagesLoading(true);
+        // Clear previous pages immediately to show loading state for the new chapter
+        setChapterPages([]);
 
         try {
             if (chapterPagesCache.current.has(chapter.url)) {
                 const pages = await chapterPagesCache.current.get(chapter.url)!;
-                setChapterPages(pages);
+                // Only update if this is still the latest requested chapter
+                if (latestChapterId.current === requestId) {
+                    setChapterPages(pages);
+                }
             } else {
                 const promise = mangaService.getChapterPages(chapter.url);
                 chapterPagesCache.current.set(chapter.url, promise);
                 const data = await promise;
-                if (data?.pages) {
-                    setChapterPages(data.pages);
+
+                // Only update if this is still the latest requested chapter
+                if (latestChapterId.current === requestId) {
+                    if (data?.pages && data.pages.length > 0) {
+                        setChapterPages(data.pages);
+                    } else {
+                        // If no pages found (and verify not cancelled), keep empty or show error
+                        // Ideally we could set an error state here
+                    }
                 }
             }
         } catch (err) {
-            console.error('Failed to load chapter pages', err);
-            setChapterPages([]);
+            if (latestChapterId.current === requestId) {
+                console.error('Failed to load chapter pages', err);
+                setChapterPages([]);
+            }
         } finally {
-            setMangaPagesLoading(false);
+            if (latestChapterId.current === requestId) {
+                setMangaPagesLoading(false);
+            }
         }
     };
 
@@ -246,6 +293,42 @@ export function useManga() {
     const zoomIn = () => setZoomLevel(prev => Math.min(prev + 10, 100));
     const zoomOut = () => setZoomLevel(prev => Math.max(prev - 10, 30));
 
+    const fetchMangaDetails = async (id: string | number) => {
+        setMangaLoading(true);
+        setSelectedManga(null);
+        setMangaChapters([]);
+        setChapterPages([]);
+        setCurrentMangaChapter(null);
+
+        try {
+            // Check if ID is numeric (AniList) or String (Scraper)
+            const isAniListId = !isNaN(Number(id));
+
+            if (isAniListId) {
+                // 1. Fetch AniList Metadata
+                const { data } = await mangaService.getMangaDetails(id);
+                if (data) {
+                    setSelectedManga(data);
+                    // 2. Fetch Chapters (search scraper via handleMangaClick logic)
+                    await handleMangaClick(data);
+                }
+            } else {
+                // 1. Fetch Scraper Metadata (String ID)
+                const data = await mangaService.getScraperMangaDetails(String(id));
+                if (data) {
+                    setSelectedManga(data);
+                    // 2. Fetch Chapters directly (we essentially have the ID)
+                    // We can reuse handleMangaClick, it handles string IDs optimization
+                    await handleMangaClick(data);
+                }
+            }
+        } catch (err) {
+            console.error('Failed to fetch manga details', err);
+        } finally {
+            setMangaLoading(false);
+        }
+    };
+
     const changeMangaPage = (page: number) => {
         setMangaLoading(true);
         setMangaPage(page);
@@ -276,6 +359,7 @@ export function useManga() {
         // Actions
         setChapterSearchQuery,
         handleMangaClick: handleMangaClickWithHistory,
+        fetchMangaDetails, // New action
         startReading,
         loadMangaChapter: loadMangaChapterWithHistory,
         prefetchChapter,

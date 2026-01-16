@@ -274,6 +274,17 @@ router.get('/random', async (req, res) => {
     }
 });
 
+// Get random manga
+router.get('/random-manga', async (req, res) => {
+    try {
+        const data = await anilistService.getRandomManga();
+        res.json(data);
+    } catch (error) {
+        console.error('Error in random manga route:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 export default router;
 
 

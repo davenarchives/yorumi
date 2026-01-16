@@ -432,6 +432,30 @@ export const anilistService = {
         }
     },
 
+    async getRandomManga() {
+        // Fetch a random page of 50 items from the top 5000 popular manga
+        const randomPage = Math.floor(Math.random() * 100) + 1;
+
+        const query = `
+            query ($page: Int) {
+                Page(page: $page, perPage: 50) {
+                    media(type: MANGA, sort: POPULARITY_DESC, isAdult: false) {
+                        id
+                    }
+                }
+            }
+        `;
+
+        try {
+            const response = await rateLimitedRequest(query, { page: randomPage });
+            const mediaList = response.data.Page.media;
+            return mediaList.length > 0 ? mediaList.map((m: any) => ({ id: m.id })) : [{ id: 1 }];
+        } catch (error) {
+            console.error('Error fetching random manga:', error);
+            return [{ id: 1 }];
+        }
+    },
+
     async searchAnime(search: string, page: number = 1, perPage: number = 24) {
         const query = `
             query ($search: String, $page: Int, $perPage: Int) {
@@ -566,8 +590,40 @@ export const anilistService = {
     async getMangaById(id: number) {
         const query = `
             query ($id: Int) {
-                Media(idMal: $id, type: MANGA) {
+                Media(id: $id, type: MANGA) {
                     ${MEDIA_FIELDS}
+                    relations {
+                        edges {
+                            relationType
+                            node {
+                                id
+                                title { romaji english }
+                                coverImage { large }
+                                format
+                                type
+                            }
+                        }
+                    }
+                    recommendations(perPage: 6) {
+                        nodes {
+                            mediaRecommendation {
+                                id
+                                title { romaji english }
+                                coverImage { large }
+                                type
+                            }
+                        }
+                    }
+                    characters(sort: [ROLE, RELEVANCE, ID], perPage: 12) {
+                        edges {
+                            role
+                            node {
+                                id
+                                name { full }
+                                image { large }
+                            }
+                        }
+                    }
                 }
             }
         `;

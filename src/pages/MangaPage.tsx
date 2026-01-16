@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import LoadingSpinner from '../components/LoadingSpinner';
 import MangaSpotlight from '../components/MangaSpotlight';
@@ -12,6 +13,7 @@ import { useManga } from '../hooks/useManga';
 import type { Manga } from '../types/manga';
 
 export default function MangaPage() {
+    const navigate = useNavigate();
     const manga = useManga();
 
     if (manga.mangaLoading && manga.mangaPage === 1) {
@@ -23,13 +25,11 @@ export default function MangaPage() {
     }
 
     const handleSpotlightClick = (mangaId: string) => {
-        console.log('Manga clicked', mangaId);
-        alert(`Manga details page coming soon! (ID: ${mangaId})`);
+        navigate(`/manga/${mangaId}`);
     };
 
     const handleMangaClick = (item: Manga) => {
-        console.log('Manga clicked', item);
-        alert(`Manga details page coming soon! (ID: ${item.mal_id})`);
+        navigate(`/manga/${item.mal_id}`);
     };
 
     // Get the title for View All based on viewMode

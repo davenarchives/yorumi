@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Shuffle } from 'lucide-react';
 import { animeService } from '../services/animeService';
+import { mangaService } from '../services/mangaService';
 
 interface NavbarProps {
     activeTab: 'anime' | 'manga';
@@ -50,20 +51,27 @@ export default function Navbar({
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, []);
 
-    // Random anime handler
-    const handleRandomAnime = async () => {
+    // Random handler
+    const handleRandom = async () => {
         if (isLoadingRandom) return;
         setIsLoadingRandom(true);
         try {
-            const result = await animeService.getRandomAnime();
-            if (result && result.id) {
-                navigate(`/anime/${result.id}`, { state: { fromRandom: true } });
+            if (activeTab === 'manga') {
+                const result = await mangaService.getRandomManga();
+                if (result && result.id) {
+                    navigate(`/manga/${result.id}`, { state: { fromRandom: true } });
+                }
+            } else {
+                const result = await animeService.getRandomAnime();
+                if (result && result.id) {
+                    navigate(`/anime/${result.id}`, { state: { fromRandom: true } });
+                }
             }
         } catch (error) {
-            console.error('Failed to get random anime:', error);
+            console.error('Failed to get random media:', error);
             // Fallback to random ID
             const randomId = Math.floor(Math.random() * 50000) + 1;
-            navigate(`/anime/${randomId}`, { state: { fromRandom: true } });
+            navigate(`/${activeTab}/${randomId}`, { state: { fromRandom: true } });
         } finally {
             setIsLoadingRandom(false);
         }
@@ -149,7 +157,7 @@ export default function Navbar({
 
                     {/* Random Button */}
                     <button
-                        onClick={handleRandomAnime}
+                        onClick={handleRandom}
                         disabled={isLoadingRandom}
                         className="group flex items-center justify-center p-2 text-gray-500 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         title="Random Anime"

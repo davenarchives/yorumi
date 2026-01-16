@@ -1,6 +1,9 @@
 export interface Manga {
     mal_id: number | string;
     title: string;
+    title_english?: string; // For fallback search
+    title_romaji?: string;  // For fallback search
+    title_native?: string;  // For display/fallback
     images: {
         jpg: {
             image_url: string;

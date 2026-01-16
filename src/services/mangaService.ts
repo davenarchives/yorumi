@@ -5,6 +5,9 @@ const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 const mapAnilistToManga = (item: any) => ({
     mal_id: item.idMal || item.id,
     title: item.title?.english || item.title?.romaji || item.title?.native || 'Unknown',
+    title_english: item.title?.english,
+    title_romaji: item.title?.romaji,
+    title_native: item.title?.native,
     title_japanese: item.title?.native,
     images: {
         jpg: {
@@ -99,6 +102,13 @@ export const mangaService = {
         };
     },
 
+    // Get manga details by ID
+    async getMangaDetails(id: number | string) {
+        const res = await fetch(`${API_BASE}/anilist/manga/${id}`);
+        const data = await res.json();
+        return { data: mapAnilistToManga(data) };
+    },
+
     // Get manga chapters from MangaKatana scraper
     async getChapters(mangaId: string) {
         const res = await fetch(`${API_BASE}/manga/chapters/${encodeURIComponent(mangaId)}`);
@@ -129,4 +139,100 @@ export const mangaService = {
             data: data.data?.map(mapAnilistToManga) || []
         };
     },
+
+    // Get scraper details (fallback for string IDs)
+    // Get scraper details (fallback for string IDs)
+    async getScraperMangaDetails(id: string) {
+        try {
+            const res = await fetch(`${API_BASE}/manga/details/${encodeURIComponent(id)}`);
+            const scraperData = await res.json();
+
+            if (!scraperData) return null;
+
+            // 1. Attempt to resolve to AniList for rich metadata
+            try {
+                // Remove some common scraper noise from title if needed, or just use as is
+                const searchRes = await this.searchManga(scraperData.title);
+                const bestMatch = searchRes.data?.[0];
+
+                if (bestMatch) {
+                    const enrichedManga = { ...bestMatch };
+                    if (scraperData.id) {
+                        enrichedManga.scraper_id = scraperData.id;
+                    }
+                    return enrichedManga;
+                }
+            } catch (err) {
+                console.warn('Failed to resolve scraper manga to AniList:', err);
+            }
+
+            // 2. Fallback: Return mapped scraper data
+            return {
+                mal_id: scraperData.id, // Keep string ID
+                title: scraperData.title,
+                title_english: scraperData.altNames?.[0] || scraperData.title, // Attempt to populate alt titles
+                title_romaji: scraperData.title,
+                title_native: scraperData.altNames?.[scraperData.altNames?.length - 1],
+                images: {
+                    jpg: {
+                        image_url: scraperData.coverImage || '',
+                        large_image_url: scraperData.coverImage || ''
+                    }
+                },
+                synopsis: scraperData.synopsis || 'No synopsis available from source.',
+                type: 'Manga',
+                status: scraperData.status || 'Unknown',
+                chapters: scraperData.chapters?.length || 0,
+                volumes: 0,
+                score: 0,
+                genres: scraperData.genres?.map((g: string) => ({ name: g, mal_id: 0 })) || [],
+                countryOfOrigin: 'JP', // Assume JP
+                authors: scraperData.author ? [{ name: scraperData.author, role: 'Story & Art' }] : [],
+                published: { from: '', to: '', string: '' }
+            } as any;
+        } catch (error) {
+            console.error('getScraperMangaDetails failed:', error);
+            return null;
+        }
+    },
+
+    // Get random manga (Client-side pool for speed)
+    async getRandomManga() {
+        // If queue is empty or running low, trigger a refill if not already happening
+        if (randomMangaQueue.length === 0) {
+            if (!refillPromise) {
+                refillPromise = (async () => {
+                    try {
+                        const res = await fetch(`${API_BASE}/anilist/random-manga`);
+                        if (!res.ok) throw new Error('Failed to fetch random manga batch');
+                        const batch = await res.json();
+
+                        // Shuffle the batch
+                        for (let i = batch.length - 1; i > 0; i--) {
+                            const j = Math.floor(Math.random() * (i + 1));
+                            [batch[i], batch[j]] = [batch[j], batch[i]];
+                        }
+
+                        randomMangaQueue.push(...batch);
+                    } catch (error) {
+                        console.error('Error replenishing random manga queue:', error);
+                        // Fallback if fetch fails
+                        randomMangaQueue.push({ id: Math.floor(Math.random() * 50000) + 1 });
+                    } finally {
+                        refillPromise = null;
+                    }
+                })();
+            }
+
+            // Wait for the refill to complete
+            await refillPromise;
+        }
+
+        return randomMangaQueue.pop() || { id: 1 };
+    }
 };
+
+// Queue to store random manga IDs locally
+const randomMangaQueue: { id: number }[] = [];
+// Singleton promise to prevent parallel refill requests (race condition fix)
+let refillPromise: Promise<void> | null = null;
