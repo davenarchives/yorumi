@@ -1,4 +1,5 @@
 import * as mangakatana from '../../scraper/mangakatana';
+import { anilistService } from '../anilist/anilist.service';
 
 export interface MangaSearchResult extends mangakatana.MangaSearchResult {
     source: 'mangakatana';
@@ -55,4 +56,49 @@ export async function getChapterPages(url: string) {
 export async function getHotUpdates() {
     const updates = await mangakatana.getHotUpdates();
     return updates.map(u => ({ ...u, id: `mk:${u.id}` }));
+}
+
+/**
+ * Get Spotlight with enriched chapter info
+ */
+export async function getEnrichedSpotlight() {
+    try {
+        // 1. Get Base Trending from AniList
+        const trending = await anilistService.getTrendingManga(1, 10);
+        const topManga = trending.media || [];
+
+        // 2. Enrich with MangaKatana Chapters in parallel
+        // We limit to top 8 to match UI
+        const limitedManga = topManga.slice(0, 8);
+
+        const enriched = await Promise.all(limitedManga.map(async (item: any) => {
+            try {
+                // Search by title
+                const title = item.title?.english || item.title?.romaji || item.title?.native;
+                if (!title) return item;
+
+                // Search on MK
+                const mkResults = await mangakatana.searchManga(title);
+
+                // Find best match (simple check: first result)
+                if (mkResults && mkResults.length > 0) {
+                    const match = mkResults[0];
+                    if (match.latestChapter) {
+                        const numMatch = match.latestChapter.match(/(\d+[\.]?\d*)/);
+                        if (numMatch) {
+                            item.chapters = parseFloat(numMatch[1]);
+                        }
+                    }
+                }
+            } catch (e) {
+                // Ignore errors for individual items
+            }
+            return item;
+        }));
+
+        return enriched;
+    } catch (error) {
+        console.error('Error fetching enriched spotlight:', error);
+        return [];
+    }
 }
