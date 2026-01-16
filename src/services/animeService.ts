@@ -277,4 +277,11 @@ export const animeService = {
         return res.json();
     },
 
+    // Get random anime
+    async getRandomAnime() {
+        const res = await fetch(`${API_BASE}/anilist/random`);
+        if (!res.ok) throw new Error('Failed to fetch random anime');
+        return res.json();
+    },
+
 };

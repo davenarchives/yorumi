@@ -263,6 +263,17 @@ router.get('/genre/:name', async (req, res) => {
     }
 });
 
+// Get random anime
+router.get('/random', async (req, res) => {
+    try {
+        const data = await anilistService.getRandomAnime();
+        res.json(data);
+    } catch (error) {
+        console.error('Error in random anime route:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 export default router;
 
 

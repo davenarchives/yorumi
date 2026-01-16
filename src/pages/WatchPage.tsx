@@ -404,19 +404,30 @@ export default function WatchPage() {
                 {!isExpanded && (
                     <aside className="w-[350px] shrink-0 h-full overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] border-l border-white/10 bg-black/20">
                         <div className="p-6 flex flex-col gap-6">
-                            {/* Poster */}
-                            <div className="aspect-[2/3] w-full rounded-xl overflow-hidden shadow-2xl relative group">
+                            {/* Poster - Clickable */}
+                            <div
+                                className="aspect-[2/3] w-full rounded-xl overflow-hidden shadow-2xl relative group cursor-pointer"
+                                onClick={() => navigate(`/anime/${id}`)}
+                            >
                                 <img
                                     src={animeData.main_picture?.large || animeData.main_picture?.medium || animeData.images?.jpg?.large_image_url}
                                     alt={animeData.title}
-                                    className="w-full h-full object-cover"
+                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                 />
+                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                                    <span className="opacity-0 group-hover:opacity-100 transition-opacity text-white text-sm font-medium bg-black/60 px-3 py-1.5 rounded-full">
+                                        View Details
+                                    </span>
+                                </div>
                             </div>
 
                             {/* Info */}
                             <div className="space-y-4">
-                                <div>
-                                    <h2 className="text-xl font-bold leading-tight text-white">
+                                <div
+                                    className="cursor-pointer group"
+                                    onClick={() => navigate(`/anime/${id}`)}
+                                >
+                                    <h2 className="text-xl font-bold leading-tight text-white group-hover:text-yorumi-accent transition-colors">
                                         {animeData.title}
                                     </h2>
                                     <p className="text-sm text-gray-500 mt-1 uppercase tracking-wider font-medium">

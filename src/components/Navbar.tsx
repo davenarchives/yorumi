@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Shuffle } from 'lucide-react';
+import { animeService } from '../services/animeService';
 
 interface NavbarProps {
     activeTab: 'anime' | 'manga';
@@ -25,6 +26,7 @@ export default function Navbar({
     const navigate = useNavigate();
 
     const [isScrolled, setIsScrolled] = useState(false);
+    const [isLoadingRandom, setIsLoadingRandom] = useState(false);
 
     // Handle scroll for transparent navbar
     useEffect(() => {
@@ -50,9 +52,21 @@ export default function Navbar({
 
     // Random anime handler
     const handleRandomAnime = async () => {
-        // Generate a random ID between 1 and 50000 (covers most anime)
-        const randomId = Math.floor(Math.random() * 50000) + 1;
-        navigate(`/anime/${randomId}`);
+        if (isLoadingRandom) return;
+        setIsLoadingRandom(true);
+        try {
+            const result = await animeService.getRandomAnime();
+            if (result && result.id) {
+                navigate(`/anime/${result.id}`);
+            }
+        } catch (error) {
+            console.error('Failed to get random anime:', error);
+            // Fallback to random ID
+            const randomId = Math.floor(Math.random() * 50000) + 1;
+            navigate(`/anime/${randomId}`);
+        } finally {
+            setIsLoadingRandom(false);
+        }
     };
 
     return (
@@ -134,11 +148,12 @@ export default function Navbar({
                 {/* Randomize Button */}
                 <button
                     onClick={handleRandomAnime}
-                    className="flex items-center gap-2 px-4 py-1.5 rounded-md bg-white/5 hover:bg-yorumi-accent hover:text-[#0a0a0a] text-gray-400 transition-all duration-300 text-sm font-bold uppercase"
+                    disabled={isLoadingRandom}
+                    className="flex items-center gap-2 px-4 py-1.5 rounded-md bg-white/5 hover:bg-yorumi-accent hover:text-[#0a0a0a] text-gray-400 transition-all duration-300 text-sm font-bold uppercase disabled:opacity-50 disabled:cursor-not-allowed group"
                     title="Random Anime"
                 >
-                    <Shuffle className="w-4 h-4" />
-                    Randomize
+                    <Shuffle className={`w-4 h-4 ${isLoadingRandom ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
+                    {isLoadingRandom ? 'Loading...' : 'Randomize'}
                 </button>
             </div>
 
