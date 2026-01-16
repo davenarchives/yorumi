@@ -109,13 +109,18 @@ const AllTimePopularManga: React.FC<AllTimePopularMangaProps> = ({ onMangaClick,
 
                                         {/* Bottom Left: Type + Chapters - Always Visible */}
                                         <div className="absolute bottom-2 left-2 flex gap-1.5 group-hover:opacity-0 transition-opacity duration-300">
-                                            <span className="bg-white/20 backdrop-blur-sm text-white px-2 py-1 rounded text-xs font-bold">
-                                                {manga.type || 'Manga'}
+                                            <span className="bg-white/20 backdrop-blur-sm text-white px-2 py-1 rounded text-xs font-bold uppercase">
+                                                {manga.countryOfOrigin === 'KR' ? 'Manhwa' : manga.countryOfOrigin === 'CN' ? 'Manhua' : (manga.type || 'Manga')}
                                             </span>
-                                            {manga.chapters && (
+                                            {(manga.chapters || manga.volumes) ? (
                                                 <span className="bg-[#22c55e] text-white px-2 py-1 rounded text-xs font-bold flex items-center gap-1">
                                                     <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M19 4H5a2 2 0 00-2 2v12a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2zm-8 7H9.5v-.5h-2v3h2V13H11v2H6V9h5v2zm7 0h-1.5v-.5h-2v3h2V13H18v2h-5V9h5v2z" /></svg>
-                                                    {manga.chapters}
+                                                    {manga.chapters || manga.volumes}
+                                                </span>
+                                            ) : (
+                                                <span className="bg-white/20 backdrop-blur-sm text-white px-2 py-1 rounded text-xs font-bold flex items-center gap-1.5">
+                                                    <span className={`w-1.5 h-1.5 rounded-full ${manga.status === 'RELEASING' || manga.status === 'Publishing' ? 'bg-green-500' : 'bg-gray-500'}`}></span>
+                                                    <span className="uppercase text-[10px]">{manga.status === 'RELEASING' ? 'Ongoing' : manga.status}</span>
                                                 </span>
                                             )}
                                         </div>

@@ -86,15 +86,18 @@ const Top100Manga: React.FC<Top100MangaProps> = ({ onMangaClick, onViewAll }) =>
 
                             {/* Bottom Left: Type + Chapters */}
                             <div className="absolute bottom-2 left-2 flex gap-1">
-                                <span className="bg-white/20 backdrop-blur-sm text-white px-1.5 py-0.5 rounded text-[10px] font-bold">
-                                    {manga.type || 'Manga'}
+                                <span className="bg-white/20 backdrop-blur-sm text-white px-1.5 py-0.5 rounded text-[10px] font-bold uppercase">
+                                    {manga.countryOfOrigin === 'KR' ? 'Manhwa' : manga.countryOfOrigin === 'CN' ? 'Manhua' : (manga.type || 'Manga')}
                                 </span>
-                                {manga.chapters && (
+                                {(manga.chapters || manga.volumes) ? (
                                     <span className="bg-[#22c55e] text-white px-1.5 py-0.5 rounded text-[10px] font-bold flex items-center gap-0.5">
-                                        <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                                        </svg>
-                                        {manga.chapters}
+                                        <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 24 24"><path d="M19 4H5a2 2 0 00-2 2v12a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2zm-8 7H9.5v-.5h-2v3h2V13H11v2H6V9h5v2zm7 0h-1.5v-.5h-2v3h2V13H18v2h-5V9h5v2z" /></svg>
+                                        {manga.chapters || manga.volumes}
+                                    </span>
+                                ) : (
+                                    <span className="bg-white/20 backdrop-blur-sm text-white px-1.5 py-0.5 rounded text-[10px] font-bold flex items-center gap-1">
+                                        <span className={`w-1 h-1 rounded-full ${manga.status === 'RELEASING' || manga.status === 'Publishing' ? 'bg-green-500' : 'bg-gray-500'}`}></span>
+                                        <span className="uppercase text-[9px]">{manga.status === 'RELEASING' ? 'Ongoing' : manga.status}</span>
                                     </span>
                                 )}
                             </div>
