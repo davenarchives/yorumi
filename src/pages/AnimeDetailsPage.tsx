@@ -129,7 +129,13 @@ export default function AnimeDetailsPage() {
                 </div>
 
                 <button
-                    onClick={() => navigate(-1)}
+                    onClick={() => {
+                        if (location.state?.fromRandom) {
+                            navigate('/', { replace: true });
+                        } else {
+                            navigate(-1);
+                        }
+                    }}
                     className="absolute top-24 left-6 z-50 p-3 bg-black/50 hover:bg-white/20 rounded-full backdrop-blur-sm transition-colors text-white"
                 >
                     <ArrowLeft className="w-6 h-6" />
