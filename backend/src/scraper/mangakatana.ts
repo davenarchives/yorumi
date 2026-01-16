@@ -31,6 +31,7 @@ export interface MangaSearchResult {
     title: string;
     url: string;
     thumbnail: string;
+    latestChapter?: string;
     source: 'mangakatana';
 }
 
@@ -81,11 +82,19 @@ export async function searchManga(query: string): Promise<MangaSearchResult[]> {
             const url = linkEl.attr('href') || '';
             const thumbnail = $el.find('div.cover img').attr('src') || '';
 
+            // Extract latest chapter
+            // Usually found in .chapter class inside text div
+            const chapters = $el.find('div.text .chapter a');
+            let latestChapter = '';
+            if (chapters.length > 0) {
+                latestChapter = chapters.first().text().trim();
+            }
+
             // Extract ID from URL (e.g., /manga/one-piece.12345 -> one-piece.12345)
             const id = url.replace(`${BASE_URL}/manga/`, '').replace(/\/$/, '');
 
             if (title && url) {
-                results.push({ id, title, url, thumbnail, source: 'mangakatana' });
+                results.push({ id, title, url, thumbnail, latestChapter, source: 'mangakatana' });
             }
         });
 
