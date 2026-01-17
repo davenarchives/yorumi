@@ -56,9 +56,9 @@ export default function SearchPage() {
                     ) : (
                         (searchResults as Manga[]).map(item => (
                             <MangaCard
-                                key={item.mal_id}
+                                key={item.id || item.mal_id}
                                 manga={item}
-                                onClick={() => navigate(`/manga/${item.mal_id}`, { state: { manga: item } })}
+                                onClick={() => navigate(`/manga/${item.id || item.mal_id}`, { state: { manga: item } })}
                             />
                         ))
                     )}

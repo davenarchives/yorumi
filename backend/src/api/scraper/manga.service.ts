@@ -5,21 +5,42 @@ export interface MangaSearchResult extends mangakatana.MangaSearchResult {
     source: 'mangakatana';
 }
 
+// In-memory search cache (5 minute TTL)
+const searchCache = new Map<string, { data: any[], timestamp: number }>();
+const SEARCH_CACHE_TTL = 0; // Disabled for debugging
+
 /**
- * Search manga (MangaKatana only)
+ * Search manga (MangaKatana only) with caching
  */
 export async function searchManga(query: string) {
+    const cacheKey = query.toLowerCase().trim();
+    const now = Date.now();
+
+    // Check cache first
+    const cached = searchCache.get(cacheKey);
+    if (cached && (now - cached.timestamp) < SEARCH_CACHE_TTL) {
+        console.log(`Search cache hit for: "${query}"`);
+        return cached.data;
+    }
+
+    console.log(`Searching MangaKatana for: "${query}"`);
     const mkResults = await mangakatana.searchManga(query).catch(err => {
         console.error('MangaKatana Search Error:', err.message);
         return [];
     });
 
     // Prefix IDs to namespace them (optional now, but keeps consistency if we add others later)
-    return mkResults.map(r => ({
+    const results = mkResults.map(r => ({
         ...r,
         id: `mk:${r.id}`,
         source: 'mangakatana' as const
     }));
+
+    // Cache the results
+    searchCache.set(cacheKey, { data: results, timestamp: now });
+    console.log(`Cached ${results.length} results for: "${query}"`);
+
+    return results;
 }
 
 /**

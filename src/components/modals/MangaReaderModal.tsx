@@ -222,10 +222,6 @@ export default function MangaReaderModal({
                                             loading="lazy"
                                         />
                                     ))}
-                                    {/* Footer / Next Chapter Hint */}
-                                    <div className="mt-8 p-8 text-center">
-                                        <p className="text-gray-500 mb-4">End of Chapter</p>
-                                    </div>
                                 </div>
                             ) : (
                                 <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-500 gap-4">

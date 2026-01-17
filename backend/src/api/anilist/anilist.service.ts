@@ -139,6 +139,7 @@ const MEDIA_FIELDS = `
         url
         site
     }
+    synonyms
 `;
 
 

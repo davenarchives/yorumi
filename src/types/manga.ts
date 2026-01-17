@@ -26,6 +26,8 @@ export interface Manga {
         string?: string;
     };
     countryOfOrigin?: string;
+    synonyms?: string[];
+    scraper_id?: string;
 }
 
 export interface MangaChapter {

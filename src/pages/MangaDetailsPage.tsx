@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { useManga } from '../hooks/useManga';
@@ -97,12 +97,21 @@ export default function MangaDetailsPage() {
     const [activeTab, setActiveTab] = useState<'summary' | 'relations'>('summary');
 
     // Fetch details on mount or ID change
+    const lastFetchedId = useRef<string | null>(null);
+
+    // Fetch details on mount or ID change
     useEffect(() => {
         window.scrollTo({ top: 0, behavior: 'instant' });
-        if (id) {
+
+        // Prevent infinite loops / duplicate fetches
+        if (id && id !== lastFetchedId.current) {
+            console.log(`[MangaDetailsPage] Fetching details for ID: ${id}`);
+            lastFetchedId.current = id;
             fetchMangaDetails(id);
         }
     }, [id]);
+
+    console.log('[MangaDetailsPage] Rendered with ID:', id);
 
     const handleBack = () => {
         if (location.state?.from) {
@@ -244,6 +253,28 @@ export default function MangaDetailsPage() {
                                 <p className="text-gray-300 text-base leading-relaxed max-w-3xl">
                                     {selectedManga.synopsis || 'No synopsis available.'}
                                 </p>
+
+                                {/* Synonyms Section - English only */}
+                                {(() => {
+                                    // Only pure English: Latin chars without accents
+                                    const isEnglishOnly = (s: string) => /^[a-zA-Z0-9\s\-':!?.,"()]+$/.test(s);
+                                    const englishSynonyms = (selectedManga.synonyms || []).filter(isEnglishOnly);
+                                    return englishSynonyms.length > 0 ? (
+                                        <div className="py-4 mt-4">
+                                            <h4 className="text-sm font-bold text-gray-400 mb-2">Also Known As</h4>
+                                            <div className="flex flex-wrap gap-2">
+                                                {englishSynonyms.map((syn, i) => (
+                                                    <span
+                                                        key={i}
+                                                        className="px-2 py-1 bg-white/5 rounded text-gray-400 text-xs hover:bg-white/10 transition-colors"
+                                                    >
+                                                        {syn}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ) : null;
+                                })()}
 
                                 {/* Chapters Section */}
                                 <div id="chapters-section" className="py-6 border-t border-white/10 mt-6">

@@ -140,34 +140,136 @@ export function useManga() {
             }
 
             if (!mangakatanaId) {
-                if (!mangakatanaId) {
-                    // Search scraper for chapters using title
-                    // STRATEGY: Try multiple title variations to find a match
+                // Search scraper for chapters using title variations + synonyms
+                // STRATEGY: Prioritize English titles since MangaKatana is English
 
-                    const titlesToTry = [
-                        manga.title,
-                        manga.title_english,
-                        manga.title_romaji,
-                        manga.title_native
-                    ].filter(Boolean) as string[];
+                // Helper: Check if string is primarily Latin characters (English-friendly)
+                const isLatinText = (s: string): boolean => {
+                    const latinChars = s.replace(/[^a-zA-Z]/g, '').length;
+                    return latinChars > s.length * 0.5; // More than 50% Latin
+                };
 
-                    // Remove duplicates
-                    const uniqueTitles = [...new Set(titlesToTry)];
+                // Separate English-friendly synonyms from non-Latin ones
+                const allSynonyms = manga.synonyms || [];
+                const englishSynonyms = allSynonyms.filter(isLatinText);
+                const nonLatinSynonyms = allSynonyms.filter(s => !isLatinText(s));
 
-                    for (const title of uniqueTitles) {
-                        try {
-                            const searchData = await mangaService.searchMangaScraper(title);
-                            if (searchData.data && searchData.data.length > 0) {
-                                const firstResult = searchData.data[0];
-                                mangakatanaId = firstResult.id;
-                                mangaIdCache.current.set(manga.mal_id, firstResult.id);
-                                console.log(`Found manga match using title: "${title}" -> ${mangakatanaId}`);
-                                break; // Stop after first match
-                            }
-                        } catch (e) {
-                            console.warn(`Search failed for title: ${title}`);
-                        }
+                // Build prioritized title list: English first, then native
+                // Build prioritized title list: English first, then native
+                const baseTitles = [
+                    manga.title_english,          // 1. English title (best for MangaKatana)
+                    manga.title,                  // 2. Default title
+                    ...englishSynonyms,           // 3. English synonyms
+                    manga.title_romaji,           // 4. Romaji (still Latin)
+                ].filter(Boolean) as string[];
+
+                // GENERATE SHORT VERSIONS: Take first 3 words of long titles
+                // This handles cases where full title is too specific or has extra words
+                const shortTitles = baseTitles.map(t => {
+                    // Remove possessive 's first, then remove special chars
+                    const clean = t.replace(/['\u2019]s\b/gi, '').replace(/[^\w\s]/g, '');
+                    const words = clean.split(/\s+/);
+                    if (words.length >= 4) { // Only shorten if title is long enough
+                        return words.slice(0, 3).join(' ');
                     }
+                    return null;
+                }).filter(Boolean) as string[];
+
+                const titlesToTry = [
+                    ...shortTitles,               // 1. Shortened fallbacks (Highest success rate)
+                    ...baseTitles,                // 2. Full English/Romaji
+                    manga.title_native,           // 3. Native
+                    ...nonLatinSynonyms           // 4. Other
+                ].filter(Boolean) as string[];
+
+                // Remove duplicates while preserving order
+                const uniqueTitles = [...new Set(titlesToTry)];
+
+                // Helper: Extract significant words (remove common words)
+                const extractWords = (s: string): string[] => {
+                    const stopWords = ['the', 'a', 'an', 'of', 'and', 'or', 'is', 'has', 'in', 'on'];
+                    return s.toLowerCase()
+                        .replace(/[^\p{L}\p{N}\s]/gu, '')
+                        .split(/\s+/)
+                        .filter(w => w.length > 1 && !stopWords.includes(w));
+                };
+
+                let bestMatch: { id: string; title: string } | null = null;
+
+                for (const title of uniqueTitles) {
+                    if (bestMatch) break; // Stop once we find a match
+
+                    // Add slight delay to avoid rate limiting
+                    if (title !== uniqueTitles[0]) await new Promise(r => setTimeout(r, 800));
+
+                    try {
+                        // Normalize special characters and simplify for search
+                        const normalizedTitle = title
+                            // Handle possessive 's - REMOVE it (Mercenary's -> Mercenary)
+                            .replace(/['\u2019]s\b/gi, '')
+                            .replace(/[''\u2019\u2018`]/g, '')  // Remove other apostrophes (Don't -> Dont)
+                            .replace(/[""]/g, '')       // Remove quotes
+                            .replace(/[–—]/g, ' ')      // Dashes to spaces  
+                            .replace(/[^\p{L}\p{N}\s]/gu, ' ')   // Keep all languages (Unicode)
+                            .replace(/\s+/g, ' ')       // Multiple spaces to single
+                            .trim();
+
+                        // Skip empty queries. Allow length 1 for CJK (rare but possible)
+                        if (normalizedTitle.length < 1) {
+                            continue;
+                        }
+
+                        const searchData = await mangaService.searchMangaScraper(normalizedTitle);
+
+                        if (searchData.data) {
+                            console.log(`[useManga] Search "${normalizedTitle}" returned ${searchData.data.length} results`);
+
+                            if (searchData.data.length > 0) {
+                                // Simple matching: check if result title matches our search
+                                for (const result of searchData.data) {
+                                    const resultTitle = (result.title || '').toLowerCase();
+                                    const normalizedSearch = normalizedTitle.toLowerCase();
+                                    const searchWords = extractWords(normalizedTitle);
+
+                                    // Check if at least 1 key word matches
+                                    const matchingWords = searchWords.filter(w => resultTitle.includes(w));
+
+                                    // Also check if the result title contains most of the search query or vice versa
+                                    const directMatch = resultTitle.includes(normalizedSearch.substring(0, 15)) ||
+                                        normalizedSearch.includes(resultTitle.substring(0, 15));
+
+                                    // REVERSE SYNONYM MATCH: Check if the result title matches ANY of our known synonyms
+                                    // This handles cases where search "Title A" returns "Title B", and "Title B" is a known synonym
+                                    const isSynonymMatch = uniqueTitles.some(t => {
+                                        const synthNorm = t.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, '').trim();
+                                        // Skip short synonyms to avoid false positives
+                                        if (synthNorm.length < 2) return false;
+
+                                        const resNorm = resultTitle.replace(/[^\p{L}\p{N}\s]/gu, '');
+                                        // Check if result contains the synonym or vice versa
+                                        return resNorm.includes(synthNorm) || synthNorm.includes(resNorm);
+                                    });
+
+                                    // Accept match if: 
+                                    // 1. 2+ words match
+                                    // 2. 1 word + direct match
+                                    // 3. Direct substring match
+                                    // 4. Matches one of our known synonyms
+                                    if (matchingWords.length >= 2 || (matchingWords.length >= 1 && directMatch) || directMatch || isSynonymMatch) {
+                                        bestMatch = { id: result.id, title: result.title };
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    } catch (e) {
+                        // Ignore search errors for individual titles
+                    }
+                }
+
+                if (bestMatch) {
+                    mangakatanaId = bestMatch.id;
+                    mangaIdCache.current.set(manga.mal_id, bestMatch.id);
                 }
             }
 
@@ -307,6 +409,8 @@ export function useManga() {
             if (isAniListId) {
                 // 1. Fetch AniList Metadata
                 const { data } = await mangaService.getMangaDetails(id);
+                console.log('Fetched manga data:', data);
+                console.log('Synonyms from API:', data?.synonyms);
                 if (data) {
                     setSelectedManga(data);
                     // 2. Fetch Chapters (search scraper via handleMangaClick logic)
