@@ -53,21 +53,25 @@ export default function MangaReaderModal({
     const [showDetails, setShowDetails] = useState(true);
     const [showChapters, setShowChapters] = useState(false); // Mobile toggle for chapters
 
+    // New Feature States
+    const [readingMode, setReadingMode] = useState<'longstrip' | 'page'>('longstrip');
+    const [pageIndex, setPageIndex] = useState(0);
+    const [isFullscreen, setIsFullscreen] = useState(false);
+
+    // Reset page index on chapter change
+    useEffect(() => {
+        setPageIndex(0);
+    }, [currentChapter?.id]);
+
     // Handle initial responsive state
     useEffect(() => {
         const handleResize = () => {
             if (window.innerWidth < 768) {
                 setShowDetails(false);
                 setShowChapters(false);
-            } else {
-                // Optional: Reset to defaults on desktop? 
-                // Better to leave user state alone if they resized, 
-                // or force open if that's the intended desktop UX.
-                // For now, let's just ensure we don't end up with weird states on mount.
             }
         };
 
-        // Run once on mount (if open)
         if (isOpen && window.innerWidth < 768) {
             setShowDetails(false);
             setShowChapters(false);
@@ -77,24 +81,62 @@ export default function MangaReaderModal({
         return () => window.removeEventListener('resize', handleResize);
     }, [isOpen]);
 
+    // Fullscreen Toggle Handler
+    const toggleFullscreen = () => {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen();
+            setIsFullscreen(true);
+        } else {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+                setIsFullscreen(false);
+            }
+        }
+    };
+
     if (!isOpen) return null;
 
-    // Filter Chapters
+    // Filter Chapters (Ascending or Descending?)
+    // Original list usually Descending (Latest first). 
+    // filteredChapters here reverses it (Oldest first).
     const filteredChapters = [...chapters].reverse().filter(chapter => {
         if (!chapterSearchQuery) return true;
         const query = chapterSearchQuery.toLowerCase();
         return chapter.title.toLowerCase().includes(query);
     });
 
+    // Determine Prev/Next Chapter based on currentChapter
+    const currentChapterIndex = chapters.findIndex(c => c.id === currentChapter?.id);
+    const prevChapter = currentChapterIndex !== -1 && currentChapterIndex < chapters.length - 1 ? chapters[currentChapterIndex + 1] : null;
+    const nextChapter = currentChapterIndex !== -1 && currentChapterIndex > 0 ? chapters[currentChapterIndex - 1] : null;
+
+    // Page Navigation
+    const handleNextPage = () => {
+        if (pageIndex < pages.length - 1) {
+            setPageIndex(p => p + 1);
+        } else if (nextChapter) {
+            onLoadChapter(nextChapter);
+        }
+    };
+
+    const handlePrevPage = () => {
+        if (pageIndex > 0) {
+            setPageIndex(p => p - 1);
+        } else if (prevChapter) {
+            onLoadChapter(prevChapter);
+        }
+    };
+
     return (
-        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/95 backdrop-blur-md transition-opacity duration-300 pt-[72px]">
+        <div className={`fixed inset-0 z-[90] flex items-center justify-center bg-black/95 backdrop-blur-md transition-opacity duration-300 ${isFullscreen ? '' : 'pt-[72px]'}`}>
             <div className="w-full h-full flex flex-col bg-[#0a0a0a]">
                 {/* 1. Header Row */}
-                <header className="h-14 shrink-0 flex items-center justify-between px-4 border-b border-white/10 bg-black/40 backdrop-blur-md z-40">
-                    <div className="flex items-center gap-4">
+                <header className="h-14 shrink-0 flex items-center justify-between px-3 md:px-4 border-b border-white/10 bg-black/40 backdrop-blur-md z-40 gap-2">
+                    {/* LEFT: Nav & Title */}
+                    <div className="flex items-center gap-2 md:gap-4 flex-1 min-w-0">
                         <button
                             onClick={onClose}
-                            className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+                            className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors shrink-0"
                         >
                             <ChevronLeft className="w-5 h-5" />
                             <span className="text-sm font-medium hidden md:inline">Back</span>
@@ -103,30 +145,89 @@ export default function MangaReaderModal({
                         {/* Mobile Chapter Toggle */}
                         <button
                             onClick={() => setShowChapters(!showChapters)}
-                            className="md:hidden p-2 text-gray-300 hover:text-white bg-white/5 rounded-lg border border-white/5"
+                            className="md:hidden p-2 text-gray-300 hover:text-white bg-white/5 rounded-lg border border-white/5 shrink-0"
                         >
                             <LayoutList className="w-4 h-4" />
                         </button>
 
-                        <h1 className="text-sm md:text-lg font-bold text-white tracking-wide truncate max-w-[150px] md:max-w-md">
-                            {manga.title}
-                            {currentChapter && <span className="text-gray-500 font-normal ml-2 hidden sm:inline">/ {currentChapter.title}</span>}
-                        </h1>
+                        <div className="flex flex-col min-w-0">
+                            <h1 className="text-sm md:text-lg font-bold text-white tracking-wide truncate leading-tight">
+                                {manga.title}
+                            </h1>
+                            {currentChapter && (
+                                <span className="text-xs text-gray-500 truncate hidden sm:block">
+                                    {currentChapter.title}
+                                </span>
+                            )}
+                        </div>
                     </div>
 
-                    <div className="flex items-center gap-2 md:gap-4">
-                        {/* Zoom Controls */}
-                        <div className="flex items-center gap-1 md:gap-2 bg-white/5 rounded-lg p-1 border border-white/10">
-                            <button onClick={onZoomOut} className="p-1.5 hover:bg-white/10 rounded text-gray-300 hover:text-white">
-                                <ZoomOut className="w-4 h-4" />
+                    {/* RIGHT: Controls */}
+                    <div className="flex items-center gap-1 md:gap-3 shrink-0">
+
+                        {/* Chapter Nav (Desktop/Mobile) */}
+                        <div className="flex items-center bg-white/5 rounded-lg border border-white/10">
+                            <button
+                                onClick={() => prevChapter && onLoadChapter(prevChapter)}
+                                disabled={!prevChapter}
+                                className="px-2 md:px-3 py-1.5 hover:bg-white/10 text-gray-400 hover:text-white disabled:opacity-30 disabled:hover:bg-transparent flex items-center gap-1.5 md:gap-2 transition-colors"
+                                title="Previous Chapter"
+                            >
+                                <svg className="w-3 h-3 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                                <span className="text-xs font-bold uppercase hidden md:inline">Prev</span>
+                                <span className="text-[10px] font-bold uppercase md:hidden">Prev</span>
                             </button>
-                            <span className="text-[10px] md:text-xs font-mono w-8 md:w-10 text-center text-gray-400">{zoomLevel}%</span>
-                            <button onClick={onZoomIn} className="p-1.5 hover:bg-white/10 rounded text-gray-300 hover:text-white">
-                                <ZoomIn className="w-4 h-4" />
+                            <span className="w-px h-4 bg-white/10 mx-0.5"></span>
+                            <button
+                                onClick={() => nextChapter && onLoadChapter(nextChapter)}
+                                disabled={!nextChapter}
+                                className="px-2 md:px-3 py-1.5 hover:bg-white/10 text-gray-400 hover:text-white disabled:opacity-30 disabled:hover:bg-transparent flex items-center gap-1.5 md:gap-2 transition-colors"
+                                title="Next Chapter"
+                            >
+                                <span className="text-xs font-bold uppercase hidden md:inline">Next</span>
+                                <span className="text-[10px] font-bold uppercase md:hidden">Next</span>
+                                <svg className="w-3 h-3 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                             </button>
                         </div>
 
-                        {/* Toggle Details */}
+                        {/* Reading Mode Toggle (Visible on Mobile) */}
+                        <button
+                            onClick={() => setReadingMode(mode => mode === 'longstrip' ? 'page' : 'longstrip')}
+                            className="p-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/10"
+                            title={readingMode === 'longstrip' ? 'Switch to Page View' : 'Switch to Longstrip'}
+                        >
+                            {readingMode === 'longstrip' ? (
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+                            ) : (
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+                            )}
+                        </button>
+
+                        {/* Zoom Controls (Hidden on Mobile) */}
+                        <div className="flex items-center gap-1 bg-white/5 rounded-lg p-1 border border-white/10 hidden sm:flex">
+                            <button onClick={onZoomOut} className="p-1.5 hover:bg-white/10 rounded text-gray-300 hover:text-white">
+                                <ZoomOut className="w-3 h-3 md:w-4 md:h-4" />
+                            </button>
+                            <span className="text-[10px] md:text-xs font-mono w-8 md:w-10 text-center text-gray-400">{zoomLevel}%</span>
+                            <button onClick={onZoomIn} className="p-1.5 hover:bg-white/10 rounded text-gray-300 hover:text-white">
+                                <ZoomIn className="w-3 h-3 md:w-4 md:h-4" />
+                            </button>
+                        </div>
+
+                        {/* Fullscreen Toggle (Visible on Mobile) */}
+                        <button
+                            onClick={toggleFullscreen}
+                            className="p-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/10"
+                            title="Toggle Fullscreen"
+                        >
+                            {isFullscreen ? (
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
+                            ) : (
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
+                            )}
+                        </button>
+
+                        {/* Toggle Details (Info) */}
                         <button
                             onClick={() => setShowDetails(!showDetails)}
                             className={`p-2 rounded-lg transition-colors ${showDetails ? 'bg-yorumi-accent text-black' : 'bg-white/10 text-white hover:bg-white/20'}`}
@@ -154,7 +255,7 @@ export default function MangaReaderModal({
                     {/* COLUMN 1: Chapter List (Left Sidebar) */}
                     <aside className={`
                         absolute md:static inset-y-0 left-0 z-40
-                        w-[280px] md:w-[350px] shrink-0 flex flex-col h-full 
+                        w-[280px] md:w-[320px] shrink-0 flex flex-col h-full 
                         bg-[#111] md:bg-black/20 border-r border-white/10 
                         transition-transform duration-300 ease-in-out
                         ${showChapters ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
@@ -162,7 +263,7 @@ export default function MangaReaderModal({
                         <div className="p-4 border-b border-white/5">
                             <div className="flex items-center justify-between mb-3">
                                 <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-2">
-                                    Chapters ({chapters.length})
+                                    Chapters
                                 </h3>
                                 <div className="flex bg-black/40 rounded-lg p-0.5 border border-white/10">
                                     <button
@@ -183,7 +284,7 @@ export default function MangaReaderModal({
                                 <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                                 <input
                                     type="text"
-                                    placeholder="Number or Title..."
+                                    placeholder="Search..."
                                     value={chapterSearchQuery}
                                     onChange={(e) => onChapterSearchChange(e.target.value)}
                                     className="w-full bg-black/40 border border-white/10 rounded-lg pl-9 pr-3 py-2 text-sm text-gray-300 focus:outline-none focus:border-white/20"
@@ -197,7 +298,7 @@ export default function MangaReaderModal({
                                     <LoadingSpinner size="md" />
                                 </div>
                             ) : filteredChapters.length > 0 ? (
-                                <div className={viewMode === 'grid' ? "grid grid-cols-5 gap-2 p-3" : "flex flex-col"}>
+                                <div className={viewMode === 'grid' ? "grid grid-cols-4 gap-2 p-3" : "flex flex-col"}>
                                     {filteredChapters.map((chapter, index) => {
                                         const isCurrent = currentChapter?.id === chapter.id;
                                         // Standardize Title Logic
@@ -225,7 +326,7 @@ export default function MangaReaderModal({
                                                 title={chapter.title}
                                             >
                                                 {viewMode === 'grid' ? (
-                                                    <span className="text-xs text-center line-clamp-4 px-1 break-words leading-tight">{mainLabel}</span>
+                                                    <span className="text-xs text-center line-clamp-2 px-1 break-words leading-tight text-[10px]">{mainLabel}</span>
                                                 ) : (
                                                     <>
                                                         <div className="flex items-center justify-between w-full mb-0.5">
@@ -266,18 +367,67 @@ export default function MangaReaderModal({
                                     <p className="text-gray-400 animate-pulse">Loading Pages...</p>
                                 </div>
                             ) : pages.length > 0 ? (
-                                <div className="flex flex-col items-center py-8 min-h-full">
-                                    {pages.map((page, index) => (
+                                readingMode === 'longstrip' ? (
+                                    // LONGSTRIP MODE
+                                    <div className="flex flex-col items-center py-8 min-h-full">
+                                        {pages.map((page, index) => (
+                                            <img
+                                                key={`${page.pageNumber}-${index}`}
+                                                src={page.imageUrl}
+                                                alt={`Page ${page.pageNumber}`}
+                                                className="transition-all duration-200 block shadow-2xl"
+                                                style={{ width: `${zoomLevel}%`, maxWidth: '100%' }}
+                                                loading="lazy"
+                                            />
+                                        ))}
+                                        {/* Next Chapter Button at Bottom */}
+                                        {nextChapter && (
+                                            <button
+                                                onClick={() => onLoadChapter(nextChapter)}
+                                                className="mt-8 px-8 py-4 bg-yorumi-accent text-black font-bold rounded-full hover:scale-105 transition-transform shadow-lg shadow-yorumi-accent/20"
+                                            >
+                                                Next Chapter
+                                            </button>
+                                        )}
+                                    </div>
+                                ) : (
+                                    // SINGLE PAGE MODE (Right to Left)
+                                    <div
+                                        className="flex items-center justify-center h-full w-full relative group select-none"
+                                        onClick={(e) => {
+                                            const width = e.currentTarget.offsetWidth;
+                                            const clickX = e.nativeEvent.offsetX;
+                                            if (clickX > width / 2) handleNextPage(); // Click Right -> Next Page (Logic Left?? No usually Webtoon is LTR? Manga is RTL?) 
+                                            // Requirements says "page (right to left)"
+                                            // So "Next Page" should be LEFT CLICK? 
+                                            // Standard WebUI: Click Right = Next. Click Left = Prev. 
+                                            // RTL Manga: Visual flow is R->L.
+                                            // Usually, UX for "Next" is commonly "Click Right Edge" even for Manga on some readers, BUT strictly RTL means "Click Left Edge" = Next.
+                                            // I will implement standard "Click Left = Next" for RTL feel? 
+                                            // Let's implement Click Left = Next, Click Right = Prev for RTL.
+                                            if (clickX < width / 3) handleNextPage(); // Left Zone = Next
+                                            else if (clickX > (width * 2 / 3)) handlePrevPage(); // Right Zone = Prev
+                                            // Center = Toggle Controls? (Not implementing toggle controls yet, just ignoring center)
+                                        }}
+                                    >
                                         <img
-                                            key={`${page.pageNumber}-${index}`}
-                                            src={page.imageUrl}
-                                            alt={`Page ${page.pageNumber}`}
-                                            className="transition-all duration-200 block shadow-2xl"
-                                            style={{ width: `${zoomLevel}%`, maxWidth: '100%' }}
-                                            loading="lazy"
+                                            src={pages[pageIndex]?.imageUrl}
+                                            alt={`Page ${pageIndex + 1}`}
+                                            className="max-h-full max-w-full object-contain shadow-2xl"
+                                            style={{ transform: `scale(${zoomLevel / 100})` }}
                                         />
-                                    ))}
-                                </div>
+
+                                        {/* Overlay Helpers */}
+                                        <div className="absolute inset-y-0 left-0 w-1/3 cursor-w-resize z-10 opacity-0 group-hover:opacity-10 transition-opacity bg-gradient-to-r from-white to-transparent" title="Next Page" />
+                                        <div className="absolute inset-y-0 right-0 w-1/3 cursor-e-resize z-10 opacity-0 group-hover:opacity-10 transition-opacity bg-gradient-to-l from-white to-transparent" title="Previous Page" />
+
+                                        {/* Page Indicator */}
+                                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur px-3 py-1 rounded-full border border-white/10 text-white text-xs font-mono">
+                                            Page {pageIndex + 1} / {pages.length}
+                                        </div>
+                                    </div>
+                                )
+
                             ) : (
                                 <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-500 gap-4">
                                     {currentChapter ? (
@@ -307,7 +457,7 @@ export default function MangaReaderModal({
                         </div>
                     </div>
 
-                    {/* COLUMN 3: Details (Right Sidebar) */}
+                    {/* COLUMN 3: Details (Right Sidebar) - Modified to not translate offscreen on Desktop? No, same logic */}
                     <aside className={`
                         absolute md:static inset-y-0 right-0 z-40
                         w-[300px] md:w-[350px] shrink-0 h-full overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] 

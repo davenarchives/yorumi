@@ -18,7 +18,7 @@ export function useManga() {
     const [mangaChaptersLoading, setMangaChaptersLoading] = useState(false);
     const [mangaPagesLoading, setMangaPagesLoading] = useState(false);
     const [chapterSearchQuery, setChapterSearchQuery] = useState('');
-    const [zoomLevel, setZoomLevel] = useState(60);
+    const [zoomLevel, setZoomLevel] = useState(() => window.innerWidth < 768 ? 100 : 60);
 
     // View All state
     const [viewMode, setViewMode] = useState<MangaViewMode>('default');
