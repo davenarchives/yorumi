@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { Manga, MangaChapter, MangaPage } from '../types/manga';
 import { mangaService } from '../services/mangaService';
+import { token_set_ratio } from 'fuzzball';
 
 export type MangaViewMode = 'default' | 'popular_manhwa' | 'all_time_popular' | 'top_100';
 
@@ -137,6 +138,21 @@ export function useManga() {
             } else if (mangaIdCache.current.has(manga.mal_id)) {
                 // Check cache first
                 mangakatanaId = mangaIdCache.current.get(manga.mal_id)!;
+            } else {
+                // 1. CHECK PERSISTENT MAPPING FIRST
+                try {
+                    const mapRes = await fetch(`http://localhost:3001/api/mapping/${manga.mal_id}`);
+                    if (mapRes.ok) {
+                        const mapData = await mapRes.json();
+                        if (mapData && mapData.id) {
+                            console.log(`[useManga] Found persistent mapping: ${manga.mal_id} -> ${mapData.id}`);
+                            mangakatanaId = mapData.id;
+                            mangaIdCache.current.set(manga.mal_id, mapData.id);
+                        }
+                    }
+                } catch (err) {
+                    console.warn('[useManga] Failed to check mapping:', err);
+                }
             }
 
             if (!mangakatanaId) {
@@ -144,7 +160,8 @@ export function useManga() {
                 // STRATEGY: Prioritize English titles since MangaKatana is English
 
                 // Helper: Check if string is primarily Latin characters (English-friendly)
-                const isLatinText = (s: string): boolean => {
+                const isLatinText = (s: string | null): boolean => {
+                    if (!s) return false;
                     const latinChars = s.replace(/[^a-zA-Z]/g, '').length;
                     return latinChars > s.length * 0.5; // More than 50% Latin
                 };
@@ -169,8 +186,8 @@ export function useManga() {
                     // Remove possessive 's first, then remove special chars
                     const clean = t.replace(/['\u2019]s\b/gi, '').replace(/[^\w\s]/g, '');
                     const words = clean.split(/\s+/);
-                    if (words.length >= 4) { // Only shorten if title is long enough
-                        return words.slice(0, 3).join(' ');
+                    if (words.length >= 6) { // Only shorten if title is very long
+                        return words.slice(0, 4).join(' '); // Take first 4 words
                     }
                     return null;
                 }).filter(Boolean) as string[];
@@ -185,14 +202,7 @@ export function useManga() {
                 // Remove duplicates while preserving order
                 const uniqueTitles = [...new Set(titlesToTry)];
 
-                // Helper: Extract significant words (remove common words)
-                const extractWords = (s: string): string[] => {
-                    const stopWords = ['the', 'a', 'an', 'of', 'and', 'or', 'is', 'has', 'in', 'on'];
-                    return s.toLowerCase()
-                        .replace(/[^\p{L}\p{N}\s]/gu, '')
-                        .split(/\s+/)
-                        .filter(w => w.length > 1 && !stopWords.includes(w));
-                };
+
 
                 let bestMatch: { id: string; title: string } | null = null;
 
@@ -207,6 +217,8 @@ export function useManga() {
                         const normalizedTitle = title
                             // Handle possessive 's - REMOVE it (Mercenary's -> Mercenary)
                             .replace(/['\u2019]s\b/gi, '')
+                            // STRIP SUFFIXES: Improve matching by removing (Official), (Digital), (West), etc.
+                            .replace(/\s*\(.*?\)\s*/g, '')
                             .replace(/[''\u2019\u2018`]/g, '')  // Remove other apostrophes (Don't -> Dont)
                             .replace(/[""]/g, '')       // Remove quotes
                             .replace(/[–—]/g, ' ')      // Dashes to spaces  
@@ -249,36 +261,11 @@ export function useManga() {
 
                             if (filteredCandidates.length === 0) continue;
 
-                            // PASS 0: GLOBAL SYNONYM MATCH (Highest Priority)
-                            // Check if candidate matches ANY of our known titles/synonyms, not just the search query
-                            const synonymMatch = filteredCandidates.find((c: any) => {
-                                const cTitle = (c.title || '').toLowerCase()
-                                    .replace(/['\u2019]s\b/gi, '')
-                                    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
-                                    .replace(/\s+/g, ' ')
-                                    .trim();
-
-                                // Check against ALL uniqueTitles
-                                return uniqueTitles.some(knownTitle => {
-                                    const kTitle = knownTitle.toLowerCase()
-                                        .replace(/['\u2019]s\b/gi, '')
-                                        .replace(/[^\p{L}\p{N}\s]/gu, ' ')
-                                        .replace(/\s+/g, ' ')
-                                        .trim();
-                                    return cTitle === kTitle || cTitle.startsWith(kTitle) || kTitle.startsWith(cTitle);
-                                });
-                            });
-
-                            if (synonymMatch) {
-                                bestMatch = { id: synonymMatch.id, title: synonymMatch.title };
-                                console.log(`[useManga] Found SYNONYM match: ${bestMatch.title}`);
-                                break;
-                            }
-
-                            // PASS 1: EXACT MATCH (Normalization insensitive)
+                            // 1. EXACT MATCH: Check normalized_query == normalized_target
+                            // "Fastest, catches 60%"
                             const exactMatch = filteredCandidates.find((c: any) => {
                                 const t = (c.title || '').toLowerCase()
-                                    .replace(/['\u2019]s\b/gi, '') // Normalize possessives
+                                    .replace(/['\u2019]s\b/gi, '')
                                     .replace(/[^\p{L}\p{N}\s]/gu, ' ')
                                     .replace(/\s+/g, ' ')
                                     .trim();
@@ -291,45 +278,86 @@ export function useManga() {
                                 break;
                             }
 
-                            // PASS 2: STRONG CONTAINMENT (Query is full prefix or clearly contained)
-                            // e.g. Query: "Solo Leveling" -> Match: "Solo Leveling (Manhwa)"
-                            const containmentMatch = filteredCandidates.find((c: any) => {
-                                const t = (c.title || '').toLowerCase();
-                                const q = normalizedTitle.toLowerCase();
-                                // Check if title starts with query (very strong signal)
-                                return t.startsWith(q);
+                            // 2. ALIAS MATCH: Check if candidate exists in known list
+                            // "Catches the Japanese/English mismatch"
+                            const aliasMatch = filteredCandidates.find((c: any) => {
+                                const cTitle = (c.title || '').toLowerCase()
+                                    .replace(/['\u2019]s\b/gi, '')
+                                    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+                                    .replace(/\s+/g, ' ')
+                                    .trim();
+
+                                // Check against ALL uniqueTitles (which includes synonyms)
+                                return uniqueTitles.some(knownTitle => {
+                                    const kTitle = knownTitle.toLowerCase()
+                                        .replace(/['\u2019]s\b/gi, '')
+                                        .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+                                        .replace(/\s+/g, ' ')
+                                        .trim();
+                                    return cTitle === kTitle;
+                                });
                             });
 
-                            if (containmentMatch) {
-                                bestMatch = { id: containmentMatch.id, title: containmentMatch.title };
-                                console.log(`[useManga] Found CONTAINMENT match: ${bestMatch.title}`);
+                            if (aliasMatch) {
+                                bestMatch = { id: aliasMatch.id, title: aliasMatch.title };
+                                console.log(`[useManga] Found ALIAS match: ${bestMatch.title}`);
+
+                                // Auto-save alias matches as well since they are exact
+                                fetch('http://localhost:3001/api/mapping', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        anilistId: manga.mal_id,
+                                        scraperId: bestMatch.id,
+                                        title: bestMatch.title
+                                    })
+                                }).catch(e => console.error('[useManga] Failed to auto-save alias mapping:', e));
+
                                 break;
                             }
 
-                            // PASS 3: FUZZY WORD MATCH (Fallback)
-                            // Require a high percentage of word overlap
-                            for (const result of filteredCandidates) {
-                                const resultTitle = (result.title || '').toLowerCase();
-                                const searchWords = extractWords(normalizedTitle);
-                                const resultWords = extractWords(resultTitle);
+                            // 3. FUZZY MATCH (RapidFuzz / fuzzball)
+                            // "Run process.extractOne with scorer=fuzz.token_set_ratio"
+                            let bestFuzzyCandidate = null;
+                            let bestFuzzyScore = 0;
 
-                                if (searchWords.length === 0) continue;
+                            for (const candidate of filteredCandidates) {
+                                const cTitle = (candidate.title || '');
+                                // Use token_set_ratio as requested
+                                const score = token_set_ratio(normalizedTitle, cTitle);
 
-                                const matchingWords = searchWords.filter(w => resultTitle.includes(w));
-                                const matchRatio = matchingWords.length / searchWords.length;
+                                if (score > bestFuzzyScore) {
+                                    bestFuzzyScore = score;
+                                    bestFuzzyCandidate = candidate;
+                                }
+                            }
 
-                                // If query is short (1-2 words), require 100% match of those words
-                                // If query is long, require at least 70%
-                                const threshold = searchWords.length <= 2 ? 1.0 : 0.7;
+                            if (bestFuzzyCandidate) {
+                                // "Check" Step: Best match score < 85 -> Flag
+                                if (bestFuzzyScore >= 85) {
+                                    // Threshold >= 85: Accept
+                                    bestMatch = { id: bestFuzzyCandidate.id, title: bestFuzzyCandidate.title };
+                                    console.log(`[useManga] Found FUZZY match: ${bestMatch.title} (Score: ${bestFuzzyScore})`);
 
-                                if (matchRatio >= threshold && resultWords.length > 0) {
-                                    // Reverse check: don't match if result has WAY more words (prevent generic matches)
-                                    // e.g. "Bleach" shouldn't match "Clorox Bleach 1000 Year War Arc" (silly example, but you get it)
-                                    if (resultWords.length < searchWords.length * 2.5) {
-                                        bestMatch = { id: result.id, title: result.title };
-                                        console.log(`[useManga] Found FUZZY match: ${bestMatch.title} (${Math.round(matchRatio * 100)}%)`);
-                                        break;
+                                    // 3. AUTO-SAVE HIGH CONFIDENCE MATCHES
+                                    if (bestFuzzyScore > 95) {
+                                        console.log(`[useManga] High confidence match (>95). Saving mapping...`);
+                                        fetch('http://localhost:3001/api/mapping', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({
+                                                anilistId: manga.mal_id,
+                                                scraperId: bestMatch.id,
+                                                title: bestMatch.title
+                                            })
+                                        }).catch(e => console.error('[useManga] Failed to auto-save mapping:', e));
                                     }
+
+                                    break;
+                                } else {
+                                    // Threshold < 85: Flag for Manual Review
+                                    console.warn(`[useManga] FLAGGED Fuzzy Match: ${bestFuzzyCandidate.title} (Score: ${bestFuzzyScore}) - Below 0.85 threshold. Needs Review.`);
+                                    // Do NOT auto-accept. Continue trying other title variations if any.
                                 }
                             }
 

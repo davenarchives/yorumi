@@ -140,6 +140,16 @@ const MEDIA_FIELDS = `
         site
     }
     synonyms
+    staff(perPage: 3, sort: [RELEVANCE, ID]) {
+        edges {
+            role
+            node {
+                name {
+                    full
+                }
+            }
+        }
+    }
 `;
 
 

@@ -32,6 +32,8 @@ export interface MangaSearchResult {
     url: string;
     thumbnail: string;
     latestChapter?: string;
+    author?: string; // New field for matching
+    altNames?: string[]; // New field for matching
     source: 'mangakatana';
 }
 
@@ -93,8 +95,20 @@ export async function searchManga(query: string): Promise<MangaSearchResult[]> {
             // Extract ID from URL (e.g., /manga/one-piece.12345 -> one-piece.12345)
             const id = url.replace(`${BASE_URL}/manga/`, '').replace(/\/$/, '');
 
+            // Try to find author or status (often in .meta or similar, but for now we might leave empty if not visible)
+            // MangaKatana list view is very minimal. We initialize empty for now.
+
             if (title && url) {
-                results.push({ id, title, url, thumbnail, latestChapter, source: 'mangakatana' });
+                results.push({
+                    id,
+                    title,
+                    url,
+                    thumbnail,
+                    latestChapter,
+                    author: '', // Initialize empty, will populate if we fetch details or find a way
+                    altNames: [],
+                    source: 'mangakatana'
+                });
             }
         });
 

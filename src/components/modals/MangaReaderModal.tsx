@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import {
     ZoomIn,
@@ -50,13 +50,41 @@ export default function MangaReaderModal({
     onZoomOut,
 }: MangaReaderModalProps) {
     const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid');
-    const [showDetails, setShowDetails] = useState(true);
+    const [showDetails, setShowDetails] = useState(false);
     const [showChapters, setShowChapters] = useState(false); // Mobile toggle for chapters
 
     // New Feature States
     const [readingMode, setReadingMode] = useState<'longstrip' | 'page'>('longstrip');
     const [pageIndex, setPageIndex] = useState(0);
-    const [isFullscreen, setIsFullscreen] = useState(false);
+
+    // Immersive Mode State
+    const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+    const lastScrollY = useRef(0);
+
+    const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+        const currentScrollY = e.currentTarget.scrollTop;
+        const diff = currentScrollY - lastScrollY.current;
+
+        // Threshold to avoid jitter
+        if (Math.abs(diff) < 10) return;
+
+        if (diff > 0 && currentScrollY > 60 && isHeaderVisible) {
+            // Scrolling Down -> Hide
+            setIsHeaderVisible(false);
+        } else if (diff < 0 && !isHeaderVisible) {
+            // Scrolling Up -> Show
+            setIsHeaderVisible(true);
+        }
+
+        lastScrollY.current = currentScrollY;
+    };
+
+    const handleContentClick = () => {
+        if (!isHeaderVisible) {
+            setIsHeaderVisible(true);
+        }
+    };
+
 
     // Reset page index on chapter change
     useEffect(() => {
@@ -81,18 +109,7 @@ export default function MangaReaderModal({
         return () => window.removeEventListener('resize', handleResize);
     }, [isOpen]);
 
-    // Fullscreen Toggle Handler
-    const toggleFullscreen = () => {
-        if (!document.fullscreenElement) {
-            document.documentElement.requestFullscreen();
-            setIsFullscreen(true);
-        } else {
-            if (document.exitFullscreen) {
-                document.exitFullscreen();
-                setIsFullscreen(false);
-            }
-        }
-    };
+
 
     if (!isOpen) return null;
 
@@ -128,10 +145,10 @@ export default function MangaReaderModal({
     };
 
     return (
-        <div className={`fixed inset-0 z-[90] flex items-center justify-center bg-black/95 backdrop-blur-md transition-opacity duration-300 ${isFullscreen ? '' : 'pt-[72px]'}`}>
-            <div className="w-full h-full flex flex-col bg-[#0a0a0a]">
+        <div className={`fixed inset-0 z-[90] flex items-center justify-center bg-black/95 backdrop-blur-md transition-all duration-300 ${isHeaderVisible ? 'pt-[72px]' : 'pt-0'}`}>
+            <div className="w-full h-full flex flex-col bg-[#0a0a0a] relative">
                 {/* 1. Header Row */}
-                <header className="h-14 shrink-0 flex items-center justify-between px-3 md:px-4 border-b border-white/10 bg-black/40 backdrop-blur-md z-40 gap-2">
+                <header className={`h-14 shrink-0 flex items-center justify-between px-3 md:px-4 border-b border-white/10 bg-black/90 backdrop-blur-md z-50 gap-2 transition-transform duration-300 absolute top-0 left-0 right-0 ${isHeaderVisible ? 'translate-y-0' : '-translate-y-full'}`}>
                     {/* LEFT: Nav & Title */}
                     <div className="flex items-center gap-2 md:gap-4 flex-1 min-w-0">
                         <button
@@ -214,18 +231,7 @@ export default function MangaReaderModal({
                             </button>
                         </div>
 
-                        {/* Fullscreen Toggle (Visible on Mobile) */}
-                        <button
-                            onClick={toggleFullscreen}
-                            className="p-2 rounded-lg text-gray-300 hover:text-white hover:bg-white/10"
-                            title="Toggle Fullscreen"
-                        >
-                            {isFullscreen ? (
-                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
-                            ) : (
-                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
-                            )}
-                        </button>
+
 
                         {/* Toggle Details (Info) */}
                         <button
@@ -257,8 +263,9 @@ export default function MangaReaderModal({
                         absolute md:static inset-y-0 left-0 z-40
                         w-[280px] md:w-[320px] shrink-0 flex flex-col h-full 
                         bg-[#111] md:bg-black/20 border-r border-white/10 
-                        transition-transform duration-300 ease-in-out
+                        transition-all duration-300 ease-in-out
                         ${showChapters ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+                        ${isHeaderVisible ? 'pt-20' : 'pt-0'}
                     `}>
                         <div className="p-4 border-b border-white/5">
                             <div className="flex items-center justify-between mb-3">
@@ -359,8 +366,11 @@ export default function MangaReaderModal({
                     </aside>
 
                     {/* COLUMN 2: Reader (Center) */}
-                    <div className="flex-1 min-w-0 bg-[#050505] relative flex flex-col border-r border-white/5">
-                        <div className="flex-1 overflow-y-auto relative h-full [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
+                    <div className={`flex-1 min-w-0 bg-[#050505] relative flex flex-col border-r border-white/5 transition-all duration-300 ${isHeaderVisible ? 'pt-20' : 'pt-0'}`}>
+                        <div
+                            className="flex-1 overflow-y-auto relative h-full [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']"
+                            onScroll={handleScroll}
+                        >
                             {pagesLoading ? (
                                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
                                     <LoadingSpinner size="lg" />
@@ -369,7 +379,10 @@ export default function MangaReaderModal({
                             ) : pages.length > 0 ? (
                                 readingMode === 'longstrip' ? (
                                     // LONGSTRIP MODE
-                                    <div className="flex flex-col items-center py-8 min-h-full">
+                                    <div
+                                        className="flex flex-col items-center pb-8 min-h-full"
+                                        onClick={handleContentClick}
+                                    >
                                         {pages.map((page, index) => (
                                             <img
                                                 key={`${page.pageNumber}-${index}`}
@@ -380,15 +393,27 @@ export default function MangaReaderModal({
                                                 loading="lazy"
                                             />
                                         ))}
-                                        {/* Next Chapter Button at Bottom */}
-                                        {nextChapter && (
-                                            <button
-                                                onClick={() => onLoadChapter(nextChapter)}
-                                                className="mt-8 px-8 py-4 bg-yorumi-accent text-black font-bold rounded-full hover:scale-105 transition-transform shadow-lg shadow-yorumi-accent/20"
-                                            >
-                                                Next Chapter
-                                            </button>
-                                        )}
+                                        {/* Prev/Next Chapter Buttons at Bottom */}
+                                        <div className="flex flex-row gap-2 md:gap-4 mt-8 pb-8 px-4 w-full max-w-2xl justify-center">
+                                            {prevChapter && (
+                                                <button
+                                                    onClick={() => onLoadChapter(prevChapter)}
+                                                    className="flex-1 px-3 md:px-8 py-3 md:py-4 bg-white/10 hover:bg-white/20 text-white text-sm md:text-base font-bold rounded-full transition-transform hover:scale-105 border border-white/10 flex items-center justify-center gap-1 md:gap-2"
+                                                >
+                                                    <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                                                    <span className="truncate">Prev Chapter</span>
+                                                </button>
+                                            )}
+                                            {nextChapter && (
+                                                <button
+                                                    onClick={() => onLoadChapter(nextChapter)}
+                                                    className="flex-1 px-3 md:px-8 py-3 md:py-4 bg-yorumi-accent text-black text-sm md:text-base font-bold rounded-full hover:scale-105 transition-transform shadow-lg shadow-yorumi-accent/20 flex items-center justify-center gap-1 md:gap-2"
+                                                >
+                                                    <span className="truncate">Next Chapter</span>
+                                                    <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
                                 ) : (
                                     // SINGLE PAGE MODE (Right to Left)
@@ -457,13 +482,14 @@ export default function MangaReaderModal({
                         </div>
                     </div>
 
-                    {/* COLUMN 3: Details (Right Sidebar) - Modified to not translate offscreen on Desktop? No, same logic */}
+                    {/* COLUMN 3: Details (Right Sidebar) */}
                     <aside className={`
                         absolute md:static inset-y-0 right-0 z-40
                         w-[300px] md:w-[350px] shrink-0 h-full overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none'] 
                         bg-[#111] md:bg-black/20 md:border-l border-l border-white/10
-                        transition-transform duration-300 ease-in-out
+                        transition-all duration-300 ease-in-out
                         ${showDetails ? 'translate-x-0' : 'translate-x-full md:hidden'}
+                        ${isHeaderVisible ? 'pt-20' : 'pt-0'}
                     `}>
                         {/* Note: desktop behavior for Details: 
                            Start hidden on mobile? 

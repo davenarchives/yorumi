@@ -45,6 +45,7 @@
   },
   "dependencies": {
     "@sparticuz/chromium": "^143.0.4",
+    "@upstash/redis": "^1.36.1",
     "axios": "^1.13.2",
     "cheerio": "^1.1.2",
     "cors": "^2.8.5",
@@ -52,6 +53,7 @@
     "embla-carousel-autoplay": "^8.6.0",
     "embla-carousel-react": "^8.6.0",
     "express": "^5.2.1",
+    "fuzzball": "^2.2.3",
     "hls.js": "^1.6.15",
     "lucide-react": "^0.562.0",
     "puppeteer-core": "^24.35.0",
