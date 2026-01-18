@@ -11,6 +11,7 @@ import {
     Calendar,
     PenTool
 } from 'lucide-react';
+import { useContinueReading } from '../../hooks/useContinueReading';
 import type { Manga, MangaChapter, MangaPage } from '../../types/manga';
 import LoadingSpinner from '../LoadingSpinner';
 
@@ -60,6 +61,23 @@ export default function MangaReaderModal({
     // Immersive Mode State
     const [isHeaderVisible, setIsHeaderVisible] = useState(true);
     const lastScrollY = useRef(0);
+
+    // Continue Reading Logic
+    const { saveProgress } = useContinueReading();
+
+    useEffect(() => {
+        if (currentChapter && manga) {
+            // Extract chapter number from title for progress tracking
+            const match = currentChapter.title.match(/Chapter\s+(\d+[\.]?\d*)/i);
+            const chapterNum = match ? match[1] : '1'; // Default to 1 if not found
+
+            saveProgress(manga, {
+                id: currentChapter.id,
+                chapter: chapterNum,
+                title: currentChapter.title
+            });
+        }
+    }, [currentChapter, manga, saveProgress]);
 
     const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
         const currentScrollY = e.currentTarget.scrollTop;
