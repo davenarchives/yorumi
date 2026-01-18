@@ -250,103 +250,99 @@ export default function WatchModal({
                             </div>
 
                             {/* Action Buttons Row */}
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    {/* Previous Button */}
-                                    <button
-                                        onClick={() => prevEpisode && onLoadStream(prevEpisode)}
-                                        disabled={!prevEpisode}
-                                        className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all ${prevEpisode
-                                            ? 'bg-white/10 text-white hover:bg-white/15'
-                                            : 'bg-white/5 text-gray-600 cursor-not-allowed'
-                                            }`}
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
-                                        </svg>
-                                        Previous
-                                    </button>
+                            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 sm:overflow-visible">
+                                {/* Previous Button */}
+                                <button
+                                    onClick={() => prevEpisode && onLoadStream(prevEpisode)}
+                                    disabled={!prevEpisode}
+                                    className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all ${prevEpisode
+                                        ? 'bg-white/10 text-white hover:bg-white/15'
+                                        : 'bg-white/5 text-gray-600 cursor-not-allowed'
+                                        }`}
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+                                    </svg>
+                                    <span className="hidden sm:inline">Previous</span>
+                                </button>
 
-                                    {/* Next Button */}
-                                    <button
-                                        onClick={() => nextEpisode && onLoadStream(nextEpisode)}
-                                        disabled={!nextEpisode}
-                                        className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all ${nextEpisode
-                                            ? 'bg-[#facc15] text-black hover:bg-[#ffe066]'
-                                            : 'bg-white/5 text-gray-600 cursor-not-allowed'
-                                            }`}
-                                    >
-                                        Next
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
-                                        </svg>
-                                    </button>
-                                </div>
+                                {/* Next Button */}
+                                <button
+                                    onClick={() => nextEpisode && onLoadStream(nextEpisode)}
+                                    disabled={!nextEpisode}
+                                    className={`flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all ${nextEpisode
+                                        ? 'bg-[#facc15] text-black hover:bg-[#ffe066]'
+                                        : 'bg-white/5 text-gray-600 cursor-not-allowed'
+                                        }`}
+                                >
+                                    <span className="hidden sm:inline">Next</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+                                    </svg>
+                                </button>
 
-                                <div className="flex items-center gap-2">
-                                    {/* Quality Dropdown */}
-                                    {streams.length > 0 && (
-                                        <div className="relative">
-                                            <button
-                                                onClick={onQualityMenuToggle}
-                                                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium bg-white/10 text-white hover:bg-white/15 transition-colors"
-                                            >
-                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0m-9.75 0h9.75" />
-                                                </svg>
-                                                {isAutoQuality ? 'AUTO' : getMappedQuality(currentStream?.quality || '')}
-                                            </button>
+                                {/* Quality Dropdown */}
+                                {streams.length > 0 && (
+                                    <div className="relative flex-shrink-0">
+                                        <button
+                                            onClick={onQualityMenuToggle}
+                                            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium bg-white/10 text-white hover:bg-white/15 transition-colors"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0m-9.75 0h9.75" />
+                                            </svg>
+                                            {isAutoQuality ? 'AUTO' : getMappedQuality(currentStream?.quality || '')}
+                                        </button>
 
-                                            {showQualityMenu && (
-                                                <div className="absolute bottom-full right-0 mb-2 p-2 w-28 bg-[#1a1a1a] rounded-lg shadow-2xl border border-white/10 flex flex-col gap-1 z-20">
-                                                    <h4 className="px-2 py-1 text-[10px] font-bold text-gray-500 uppercase">Quality</h4>
-                                                    {streams.map((s, idx) => (
-                                                        <button
-                                                            key={idx}
-                                                            onClick={() => onQualityChange(idx)}
-                                                            className={`px-3 py-1.5 text-xs text-left rounded transition-colors ${!isAutoQuality && selectedStreamIndex === idx ? 'bg-white text-black font-bold' : 'hover:bg-white/5 text-gray-300'}`}
-                                                        >
-                                                            {getMappedQuality(s.quality)}
-                                                        </button>
-                                                    ))}
+                                        {showQualityMenu && (
+                                            <div className="absolute bottom-full left-0 mb-2 p-2 w-28 bg-[#1a1a1a] rounded-lg shadow-2xl border border-white/10 flex flex-col gap-1 z-20">
+                                                <h4 className="px-2 py-1 text-[10px] font-bold text-gray-500 uppercase">Quality</h4>
+                                                {streams.map((s, idx) => (
                                                     <button
-                                                        onClick={onSetAutoQuality}
-                                                        className={`px-3 py-1.5 text-xs text-left rounded transition-colors ${isAutoQuality ? 'bg-white text-black font-bold' : 'hover:bg-white/5 text-gray-300'}`}
+                                                        key={idx}
+                                                        onClick={() => onQualityChange(idx)}
+                                                        className={`px-3 py-1.5 text-xs text-left rounded transition-colors ${!isAutoQuality && selectedStreamIndex === idx ? 'bg-white text-black font-bold' : 'hover:bg-white/5 text-gray-300'}`}
                                                     >
-                                                        AUTO
+                                                        {getMappedQuality(s.quality)}
                                                     </button>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
+                                                ))}
+                                                <button
+                                                    onClick={onSetAutoQuality}
+                                                    className={`px-3 py-1.5 text-xs text-left rounded transition-colors ${isAutoQuality ? 'bg-white text-black font-bold' : 'hover:bg-white/5 text-gray-300'}`}
+                                                >
+                                                    AUTO
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
 
-                                    {/* Reload Button */}
-                                    <button
-                                        onClick={handleReload}
-                                        disabled={!currentEpisode}
-                                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium bg-white/10 text-white hover:bg-white/15 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
-                                        </svg>
-                                        Reload
-                                    </button>
+                                {/* Reload Button */}
+                                <button
+                                    onClick={handleReload}
+                                    disabled={!currentEpisode}
+                                    className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium bg-white/10 text-white hover:bg-white/15 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+                                    </svg>
+                                    <span className="hidden sm:inline">Reload</span>
+                                </button>
 
-                                    {/* Expand Button */}
-                                    <button
-                                        onClick={() => setIsExpanded(!isExpanded)}
-                                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium bg-white/10 text-white hover:bg-white/20 border border-white/10 transition-colors"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                                            {isExpanded ? (
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 9V4.5M9 9H4.5M9 9 3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5 5.25 5.25" />
-                                            ) : (
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
-                                            )}
-                                        </svg>
-                                        {isExpanded ? 'Collapse' : 'Expand'}
-                                    </button>
-                                </div>
+                                {/* Expand Button */}
+                                <button
+                                    onClick={() => setIsExpanded(!isExpanded)}
+                                    className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium bg-white/10 text-white hover:bg-white/20 border border-white/10 transition-colors ml-auto sm:ml-0"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                                        {isExpanded ? (
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 9V4.5M9 9H4.5M9 9 3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5 5.25 5.25" />
+                                        ) : (
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
+                                        )}
+                                    </svg>
+                                    <span className="hidden sm:inline">{isExpanded ? 'Collapse' : 'Expand'}</span>
+                                </button>
                             </div>
                         </div>
                     </div>
