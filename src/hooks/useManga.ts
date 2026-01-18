@@ -458,28 +458,42 @@ export function useManga() {
         const currentIndex = mangaChapters.findIndex(ch => ch.id === currentChapter.id);
         if (currentIndex === -1) return;
 
-        // Chapters are typically ordered newest-first (index 0 = latest chapter)
-        // "Next" chapters for reading are at higher indices (earlier chapters)
-        // But user likely wants to read forward (next = lower chapter number = higher index? No...)
-        // Actually, depends on order. Let's assume: index 0 = chapter N (latest), index 1 = chapter N-1
-        // Reading "forward" means going from Chapter 1 -> 2 -> 3, which is from high index to low index.
-        // So "next" chapters are at LOWER indices (newer chapters).
+        // Collect URLs to prefetch
+        // "Next" chapters are at LOWER indices (newer chapters) in descending list
+        // We will prefetch next 3 (forward) and prev 1 (backward)
+        const urlsToPrefetch: string[] = [];
 
-        // Let's prefetch BOTH directions to cover different reading patterns:
-        // - Next 2 chapters (lower index, reading forward in story)
-        // - Previous 1 chapter (higher index, re-reading)
+        // Forward (Next chapters)
         for (let i = 1; i <= count; i++) {
-            const nextIndex = currentIndex - i; // Forward in story (newer chapter)
+            const nextIndex = currentIndex - i; // Forward in story (newer/next chapter in array)
             if (nextIndex >= 0 && mangaChapters[nextIndex]) {
-                prefetchChapter(mangaChapters[nextIndex]);
+                // Check if already in cache (client-side) to avoid sending unnecessary requests
+                if (!chapterPagesCache.current.has(mangaChapters[nextIndex].url)) {
+                    urlsToPrefetch.push(mangaChapters[nextIndex].url);
+                    // Create a pending promise in cache so we don't fetch again if user navigates immediately
+                    // Actually, better to let loadMangaChapter handle the fetch if it happens
+                }
             }
+        }
+
+        // Backward (Previous chapter - usually index + 1)
+        const prevIndex = currentIndex + 1;
+        if (prevIndex < mangaChapters.length && mangaChapters[prevIndex]) {
+            if (!chapterPagesCache.current.has(mangaChapters[prevIndex].url)) {
+                urlsToPrefetch.push(mangaChapters[prevIndex].url);
+            }
+        }
+
+        if (urlsToPrefetch.length > 0) {
+            console.log(`[useManga] Prefetching ${urlsToPrefetch.length} chapters via backend`);
+            mangaService.prefetchChapters(urlsToPrefetch);
         }
     };
 
     const prefetchChapter = (chapter: MangaChapter) => {
+        // Legacy individual prefetch - can redirect to batch
         if (!chapterPagesCache.current.has(chapter.url)) {
-            const promise = mangaService.getChapterPages(chapter.url);
-            chapterPagesCache.current.set(chapter.url, promise);
+            mangaService.prefetchChapters([chapter.url]);
         }
     };
 

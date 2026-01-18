@@ -130,8 +130,22 @@ export const mangaService = {
     },
 
     async getHotUpdates() {
-        const res = await fetch(`${API_BASE}/manga/hot-updates`);
-        return res.json();
+        const response = await fetch(`${API_BASE}/manga/hot-updates`);
+        if (!response.ok) throw new Error('Failed to fetch hot updates');
+        const data = await response.json();
+        return data.data;
+    },
+
+    async prefetchChapters(urls: string[]) {
+        try {
+            await fetch(`${API_BASE}/manga/prefetch`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ urls }),
+            });
+        } catch (err) {
+            console.error('Prefetch failed', err);
+        }
     },
 
     async getEnrichedSpotlight() {

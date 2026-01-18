@@ -104,6 +104,27 @@ export async function getChapterPages(url: string) {
     return pages;
 }
 
+/**
+ * Prefetch multiple chapters to warm the cache
+ */
+export async function prefetchChapters(urls: string[]) {
+    console.log(`[Prefetch] Warming cache for ${urls.length} chapters`);
+    // Process in background, don't await the results
+    urls.forEach(async (url) => {
+        try {
+            // Check cache first to avoid unnecessary work
+            const cached = pagesCache.get(url);
+            const now = Date.now();
+            if (!cached || (now - cached.timestamp) >= PAGES_CACHE_TTL) {
+                await getChapterPages(url);
+            }
+        } catch (err) {
+            console.error(`[Prefetch] Failed for ${url.slice(-30)}`, err);
+        }
+    });
+    return { success: true, queued: urls.length };
+}
+
 // Simple in-memory cache for Hot Updates
 let hotUpdatesCache: any[] | null = null;
 let hotUpdatesCacheTime = 0;

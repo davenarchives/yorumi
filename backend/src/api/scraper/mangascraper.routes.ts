@@ -88,6 +88,26 @@ router.get('/pages', async (req: Request, res: Response) => {
 });
 
 /**
+ * Prefetch chapters (Cache Warming)
+ * POST /api/manga/prefetch
+ * Body: { urls: string[] }
+ */
+router.post('/prefetch', async (req: Request, res: Response) => {
+    try {
+        const { urls } = req.body;
+        if (!urls || !Array.isArray(urls)) {
+            return res.status(400).json({ error: 'Invalid URLs array' });
+        }
+
+        const result = await mangaService.prefetchChapters(urls);
+        res.json(result);
+    } catch (error) {
+        console.error('Prefetch error:', error);
+        res.status(500).json({ error: 'Failed to prefetch chapters' });
+    }
+});
+
+/**
  * Get hot updates (MangaKatana)
  * GET /api/manga/hot-updates
  */
