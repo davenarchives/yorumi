@@ -432,6 +432,31 @@ export function useManga() {
         } finally {
             if (latestChapterId.current === requestId) {
                 setMangaPagesLoading(false);
+
+                // Auto-prefetch next 3 chapters for seamless reading
+                prefetchNextChapters(chapter, 3);
+            }
+        }
+    };
+
+    const prefetchNextChapters = (currentChapter: MangaChapter, count: number) => {
+        const currentIndex = mangaChapters.findIndex(ch => ch.id === currentChapter.id);
+        if (currentIndex === -1) return;
+
+        // Chapters are typically ordered newest-first (index 0 = latest chapter)
+        // "Next" chapters for reading are at higher indices (earlier chapters)
+        // But user likely wants to read forward (next = lower chapter number = higher index? No...)
+        // Actually, depends on order. Let's assume: index 0 = chapter N (latest), index 1 = chapter N-1
+        // Reading "forward" means going from Chapter 1 -> 2 -> 3, which is from high index to low index.
+        // So "next" chapters are at LOWER indices (newer chapters).
+
+        // Let's prefetch BOTH directions to cover different reading patterns:
+        // - Next 2 chapters (lower index, reading forward in story)
+        // - Previous 1 chapter (higher index, re-reading)
+        for (let i = 1; i <= count; i++) {
+            const nextIndex = currentIndex - i; // Forward in story (newer chapter)
+            if (nextIndex >= 0 && mangaChapters[nextIndex]) {
+                prefetchChapter(mangaChapters[nextIndex]);
             }
         }
     };
