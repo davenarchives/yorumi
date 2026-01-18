@@ -148,7 +148,7 @@ export default function MangaReaderModal({
         <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/95 backdrop-blur-md transition-all duration-300 pt-[60px]">
             <div className="w-full h-full flex flex-col bg-[#0a0a0a] relative">
                 {/* 1. Header Row */}
-                <header className={`h-14 shrink-0 flex items-center justify-between px-3 md:px-4 border-b border-white/10 bg-black/90 backdrop-blur-md z-50 gap-2 transition-transform duration-300 absolute top-0 left-0 right-0 ${isHeaderVisible ? 'translate-y-0' : '-translate-y-full'}`}>
+                <header className={`h-14 shrink-0 flex items-center justify-between px-3 md:px-4 border-b border-white/10 bg-[#0a0a0a] z-50 gap-2 transition-transform duration-300 absolute top-0 left-0 right-0 ${isHeaderVisible ? 'translate-y-0' : '-translate-y-full'}`}>
                     {/* LEFT: Nav & Title */}
                     <div className="flex items-center gap-2 md:gap-4 flex-1 min-w-0">
                         <button
@@ -245,7 +245,7 @@ export default function MangaReaderModal({
                 </header>
 
                 {/* 2. Main Layout */}
-                <div className={`flex-1 flex min-h-0 relative overflow-hidden transition-all duration-300 ${isHeaderVisible ? 'pt-14' : 'pt-0'}`}>
+                <div className="flex-1 flex min-h-0 relative overflow-hidden">
 
                     {/* Mobile Backdrop for Sidebars */}
                     {(showChapters || showDetails) && (
@@ -265,7 +265,7 @@ export default function MangaReaderModal({
                         bg-[#111] md:bg-black/20 border-r border-white/10 
                         transition-all duration-300 ease-in-out
                         ${showChapters ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
-                        ${isHeaderVisible ? 'pt-20' : 'pt-0'}
+                        ${isHeaderVisible ? 'pt-14' : 'pt-0'}
                     `}>
                         <div className="p-4 border-b border-white/5">
                             <div className="flex items-center justify-between mb-3">
@@ -366,7 +366,7 @@ export default function MangaReaderModal({
                     </aside>
 
                     {/* COLUMN 2: Reader (Center) */}
-                    <div className={`flex-1 min-w-0 bg-[#050505] relative flex flex-col border-r border-white/5 transition-all duration-300 ${isHeaderVisible ? 'pt-20' : 'pt-0'}`}>
+                    <div className={`flex-1 min-w-0 bg-[#050505] relative flex flex-col border-r border-white/5 transition-all duration-300 ${isHeaderVisible ? 'pt-14' : 'pt-0'}`}>
                         <div
                             className="flex-1 overflow-y-auto relative h-full [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']"
                             onScroll={handleScroll}
@@ -489,7 +489,7 @@ export default function MangaReaderModal({
                         bg-[#111] md:bg-black/20 md:border-l border-l border-white/10
                         transition-all duration-300 ease-in-out
                         ${showDetails ? 'translate-x-0' : 'translate-x-full md:hidden'}
-                        ${isHeaderVisible ? 'pt-20' : 'pt-0'}
+                        ${isHeaderVisible ? 'pt-14' : 'pt-0'}
                     `}>
                         {/* Note: desktop behavior for Details: 
                            Start hidden on mobile? 
