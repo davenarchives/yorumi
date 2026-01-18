@@ -9,6 +9,7 @@ import SearchPage from './pages/SearchPage';
 import MangaPage from './pages/MangaPage';
 import GenrePage from './pages/GenrePage';
 import MangaGenrePage from './pages/MangaGenrePage';
+import ProfilePage from './pages/ProfilePage';
 import { useAnime } from './hooks/useAnime';
 
 function App() {
@@ -19,7 +20,11 @@ function App() {
 
   // Derive active tab from URL or Query Params (to persist state on Search Page)
   const queryParams = new URLSearchParams(location.search);
-  const activeTab = location.pathname.startsWith('/manga') || queryParams.get('type') === 'manga' ? 'manga' : 'anime';
+  const activeTab = location.pathname.startsWith('/manga')
+    || queryParams.get('type') === 'manga'
+    || queryParams.get('tab') === 'continue-reading'
+    || queryParams.get('tab') === 'readlist'
+    ? 'manga' : 'anime';
 
   // Sync Search Query if we are on search page
   useEffect(() => {
@@ -82,6 +87,7 @@ function App() {
         <Route path="/manga/:id" element={<MangaDetailsPage />} />
         <Route path="/genre/:name" element={<GenrePage />} />
         <Route path="/manga/genre/:name" element={<MangaGenrePage />} />
+        <Route path="/profile" element={<ProfilePage />} />
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
