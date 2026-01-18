@@ -106,13 +106,16 @@ export default function AnimeDetailsPage() {
 
     const bannerImage = selectedAnime.anilist_banner_image || selectedAnime.images.jpg.large_image_url;
 
-    // Helper for latest episode
+    // Helper for latest episode - returns null for unreleased anime
     const getLatestEpisode = () => {
+        if (selectedAnime.status === 'NOT_YET_RELEASED') return null;
         if (selectedAnime.latestEpisode) return selectedAnime.latestEpisode;
         if (episodes.length > 0) return episodes.length;
         if (selectedAnime.episodes) return selectedAnime.episodes;
         return null;
     };
+
+    const isUnreleased = selectedAnime.status === 'NOT_YET_RELEASED';
 
     return (
         <div className="min-h-screen bg-[#0a0a0a] pb-20 fade-in animate-in duration-300">
@@ -215,19 +218,21 @@ export default function AnimeDetailsPage() {
                                     {selectedAnime.synopsis || 'No synopsis.'}
                                 </p>
 
-                                <div className="py-6 border-t border-white/10 mt-6">
-                                    <h3 className="text-xl font-bold text-white mb-4">Episodes</h3>
-                                    {epLoading ? (
-                                        <div className="py-8 flex justify-center"><LoadingSpinner size="md" /></div>
-                                    ) : episodes.length > 0 ? (
-                                        <EpisodeList
-                                            episodes={episodes}
-                                            onEpisodeClick={(ep) => navigate(`/watch/${id}?ep=${ep.episodeNumber}`)}
-                                        />
-                                    ) : (
-                                        <div className="text-gray-500 text-center py-4">No episodes found.</div>
-                                    )}
-                                </div>
+                                {!isUnreleased && (
+                                    <div className="py-6 border-t border-white/10 mt-6">
+                                        <h3 className="text-xl font-bold text-white mb-4">Episodes</h3>
+                                        {epLoading ? (
+                                            <div className="py-8 flex justify-center"><LoadingSpinner size="md" /></div>
+                                        ) : episodes.length > 0 ? (
+                                            <EpisodeList
+                                                episodes={episodes}
+                                                onEpisodeClick={(ep) => navigate(`/watch/${id}?ep=${ep.episodeNumber}`)}
+                                            />
+                                        ) : (
+                                            <div className="text-gray-500 text-center py-4">No episodes found.</div>
+                                        )}
+                                    </div>
+                                )}
 
                                 {/* Characters Section */}
                                 {detailsLoading ? (

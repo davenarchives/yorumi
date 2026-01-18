@@ -10,7 +10,9 @@ interface AnimeCardProps {
 
 const AnimeCard: React.FC<AnimeCardProps> = ({ anime, onClick, onWatchClick, onMouseEnter }) => {
     // Get episode count - prefer latestEpisode for ongoing anime
-    const episodeCount = anime.latestEpisode || anime.episodes;
+    // Hide episode count for unreleased anime
+    const isUnreleased = anime.status === 'NOT_YET_RELEASED';
+    const episodeCount = isUnreleased ? null : (anime.latestEpisode || anime.episodes);
 
     return (
         <div
