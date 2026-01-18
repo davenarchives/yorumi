@@ -403,32 +403,47 @@ export function useManga() {
         setChapterPages([]);
 
         try {
-            if (chapterPagesCache.current.has(chapter.url)) {
-                const pages = await chapterPagesCache.current.get(chapter.url)!;
-                // Only update if this is still the latest requested chapter
-                if (latestChapterId.current === requestId) {
-                    setChapterPages(pages);
-                }
-            } else {
-                const promise = mangaService.getChapterPages(chapter.url);
-                chapterPagesCache.current.set(chapter.url, promise);
-                const data = await promise;
+            let pages: MangaPage[] = [];
 
-                // Only update if this is still the latest requested chapter
-                if (latestChapterId.current === requestId) {
+            if (chapterPagesCache.current.has(chapter.url)) {
+                // Get from cache
+                const cachedPages = await chapterPagesCache.current.get(chapter.url)!;
+
+                // Validate cache - if empty, remove from cache and refetch
+                if (cachedPages && cachedPages.length > 0) {
+                    pages = cachedPages;
+                } else {
+                    // Invalid cache entry, remove it
+                    chapterPagesCache.current.delete(chapter.url);
+                    // Fetch fresh
+                    const data = await mangaService.getChapterPages(chapter.url);
                     if (data?.pages && data.pages.length > 0) {
-                        setChapterPages(data.pages);
-                    } else {
-                        // If no pages found (and verify not cancelled), keep empty or show error
-                        // Ideally we could set an error state here
+                        pages = data.pages;
+                        // Only cache successful results
+                        chapterPagesCache.current.set(chapter.url, Promise.resolve(data.pages));
                     }
                 }
+            } else {
+                // Fetch fresh
+                const data = await mangaService.getChapterPages(chapter.url);
+                if (data?.pages && data.pages.length > 0) {
+                    pages = data.pages;
+                    // Only cache successful results
+                    chapterPagesCache.current.set(chapter.url, Promise.resolve(data.pages));
+                }
+            }
+
+            // Only update if this is still the latest requested chapter
+            if (latestChapterId.current === requestId) {
+                setChapterPages(pages);
             }
         } catch (err) {
             if (latestChapterId.current === requestId) {
                 console.error('Failed to load chapter pages', err);
                 setChapterPages([]);
             }
+            // Clear any failed cache entry
+            chapterPagesCache.current.delete(chapter.url);
         } finally {
             if (latestChapterId.current === requestId) {
                 setMangaPagesLoading(false);
