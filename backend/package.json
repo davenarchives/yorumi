@@ -6,7 +6,7 @@
     "scripts": {
         "start": "node dist/index.js",
         "predev": "npx -y kill-port 3001",
-        "dev": "nodemon src/index.ts",
+        "dev": "nodemon --exec tsx src/index.ts",
         "build": "tsc"
     },
     "dependencies": {
@@ -29,6 +29,7 @@
         "nodemon": "^3.0.1",
         "puppeteer": "^24.35.0",
         "ts-node": "^1.7.1",
+        "tsx": "^4.21.0",
         "typescript": "^5.3.2"
     }
 }
