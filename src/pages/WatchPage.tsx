@@ -349,32 +349,37 @@ export default function WatchPage() {
                             </button>
 
                             {/* Quality Selector */}
-                            <div className="relative flex-shrink-0">
+                            <div className="relative flex-shrink-0 ml-auto z-50">
                                 <button
                                     onClick={() => setShowQualityMenu(!showQualityMenu)}
-                                    className="h-10 px-4 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white font-medium flex items-center gap-2 transition-colors"
+                                    className="h-10 px-4 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white font-medium flex items-center gap-2 transition-colors relative z-10"
                                 >
                                     <Settings className="w-4 h-4" />
-                                    {isAutoQuality ? 'Auto' : streams[selectedStreamIndex]?.quality || 'Quality'}
+                                    <span className="hidden sm:inline">
+                                        {isAutoQuality ? 'Auto' : streams[selectedStreamIndex]?.quality || 'Quality'}
+                                    </span>
                                 </button>
                                 {showQualityMenu && (
-                                    <div className="absolute bottom-full left-0 mb-2 bg-[#1a1a1a] border border-white/10 rounded-lg p-1.5 min-w-[140px] shadow-xl flex flex-col gap-1 z-50">
-                                        <button
-                                            onClick={setAutoQuality}
-                                            className={`w-full text-left px-3 py-1.5 text-sm rounded-md transition-colors ${isAutoQuality ? 'bg-yellow-500/20 text-yellow-500' : 'text-gray-300 hover:bg-white/10'}`}
-                                        >
-                                            Auto
-                                        </button>
-                                        {streams.map((stream, idx) => (
+                                    <>
+                                        <div className="fixed inset-0 z-0" onClick={() => setShowQualityMenu(false)}></div>
+                                        <div className="absolute bottom-full right-0 mb-2 bg-[#1a1a1a] border border-white/10 rounded-lg p-1.5 min-w-[140px] shadow-xl flex flex-col gap-1 z-20">
                                             <button
-                                                key={idx}
-                                                onClick={() => handleQualityChange(idx)}
-                                                className={`w-full text-left px-3 py-1.5 text-sm rounded-md transition-colors ${!isAutoQuality && selectedStreamIndex === idx ? 'bg-yellow-500/20 text-yellow-500' : 'text-gray-300 hover:bg-white/10'}`}
+                                                onClick={setAutoQuality}
+                                                className={`w-full text-left px-3 py-1.5 text-sm rounded-md transition-colors ${isAutoQuality ? 'bg-yellow-500/20 text-yellow-500' : 'text-gray-300 hover:bg-white/10'}`}
                                             >
-                                                {stream.quality || 'Unknown'} {stream.isHls && '(HLS)'}
+                                                Auto
                                             </button>
-                                        ))}
-                                    </div>
+                                            {streams.map((stream, idx) => (
+                                                <button
+                                                    key={idx}
+                                                    onClick={() => handleQualityChange(idx)}
+                                                    className={`w-full text-left px-3 py-1.5 text-sm rounded-md transition-colors ${!isAutoQuality && selectedStreamIndex === idx ? 'bg-yellow-500/20 text-yellow-500' : 'text-gray-300 hover:bg-white/10'}`}
+                                                >
+                                                    {stream.quality ? stream.quality.replace(/\s?p$/i, '') : 'Unknown'}P {stream.isHls && '(HLS)'}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </>
                                 )}
                             </div>
 
@@ -390,7 +395,7 @@ export default function WatchPage() {
                             {/* Expand */}
                             <button
                                 onClick={toggleExpand}
-                                className="flex-shrink-0 flex h-10 px-4 rounded-lg bg-transparent hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white font-medium items-center gap-2 transition-colors ml-auto sm:ml-0"
+                                className="flex-shrink-0 flex h-10 px-4 rounded-lg bg-transparent hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white font-medium items-center gap-2 transition-colors"
                             >
                                 {isExpanded ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
                                 <span className="hidden sm:inline">{isExpanded ? 'Collapse' : 'Expand'}</span>

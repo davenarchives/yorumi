@@ -283,36 +283,47 @@ export default function WatchModal({
 
                                 {/* Quality Dropdown */}
                                 {streams.length > 0 && (
-                                    <div className="relative flex-shrink-0">
+                                    <div className="relative flex-shrink-0 ml-auto z-50">
                                         <button
                                             onClick={onQualityMenuToggle}
-                                            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium bg-white/10 text-white hover:bg-white/15 transition-colors"
+                                            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium bg-white/10 text-white hover:bg-white/15 transition-colors relative z-10"
                                         >
                                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0m-9.75 0h9.75" />
                                             </svg>
-                                            {isAutoQuality ? 'AUTO' : getMappedQuality(currentStream?.quality || '')}
+                                            <span className="hidden sm:inline">
+                                                {isAutoQuality ? 'AUTO' : getMappedQuality(currentStream?.quality || '')}
+                                            </span>
                                         </button>
 
                                         {showQualityMenu && (
-                                            <div className="absolute bottom-full left-0 mb-2 p-2 w-28 bg-[#1a1a1a] rounded-lg shadow-2xl border border-white/10 flex flex-col gap-1 z-20">
-                                                <h4 className="px-2 py-1 text-[10px] font-bold text-gray-500 uppercase">Quality</h4>
-                                                {streams.map((s, idx) => (
+                                            <>
+                                                <div className="fixed inset-0 z-0" onClick={onQualityMenuToggle}></div>
+                                                <div className="absolute bottom-full right-0 mb-2 p-2 w-28 bg-[#1a1a1a] rounded-lg shadow-2xl border border-white/10 flex flex-col gap-1 z-20">
+                                                    <h4 className="px-2 py-1 text-[10px] font-bold text-gray-500 uppercase">Quality</h4>
+                                                    {streams.map((s, idx) => (
+                                                        <button
+                                                            key={idx}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                onQualityChange(idx);
+                                                            }}
+                                                            className={`px-3 py-1.5 text-xs text-left rounded transition-colors ${!isAutoQuality && selectedStreamIndex === idx ? 'bg-white text-black font-bold' : 'hover:bg-white/5 text-gray-300'}`}
+                                                        >
+                                                            {getMappedQuality(s.quality).replace(/\s?p$/i, '')}P
+                                                        </button>
+                                                    ))}
                                                     <button
-                                                        key={idx}
-                                                        onClick={() => onQualityChange(idx)}
-                                                        className={`px-3 py-1.5 text-xs text-left rounded transition-colors ${!isAutoQuality && selectedStreamIndex === idx ? 'bg-white text-black font-bold' : 'hover:bg-white/5 text-gray-300'}`}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            onSetAutoQuality();
+                                                        }}
+                                                        className={`px-3 py-1.5 text-xs text-left rounded transition-colors ${isAutoQuality ? 'bg-white text-black font-bold' : 'hover:bg-white/5 text-gray-300'}`}
                                                     >
-                                                        {getMappedQuality(s.quality)}
+                                                        AUTO
                                                     </button>
-                                                ))}
-                                                <button
-                                                    onClick={onSetAutoQuality}
-                                                    className={`px-3 py-1.5 text-xs text-left rounded transition-colors ${isAutoQuality ? 'bg-white text-black font-bold' : 'hover:bg-white/5 text-gray-300'}`}
-                                                >
-                                                    AUTO
-                                                </button>
-                                            </div>
+                                                </div>
+                                            </>
                                         )}
                                     </div>
                                 )}
@@ -332,7 +343,7 @@ export default function WatchModal({
                                 {/* Expand Button */}
                                 <button
                                     onClick={() => setIsExpanded(!isExpanded)}
-                                    className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium bg-white/10 text-white hover:bg-white/20 border border-white/10 transition-colors ml-auto sm:ml-0"
+                                    className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium bg-white/10 text-white hover:bg-white/20 border border-white/10 transition-colors"
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
                                         {isExpanded ? (
