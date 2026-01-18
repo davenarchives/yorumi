@@ -209,15 +209,10 @@ export default function MangaDetailsPage() {
                         <div className="flex flex-row items-center justify-center md:justify-start gap-4 py-2">
                             <button
                                 onClick={() => {
-                                    // Start reading first chapter
+                                    // Start reading first chapter (last in array since MK returns newest-first)
                                     if (mangaChapters.length > 0) {
-                                        // Usually simplify to first or last? MK returns Descending usually?
-                                        // Need to check order. Usually MK is Latest first.
-                                        // So we probably want the LAST element for Chapter 1? 
-                                        // Or just open the listing.
-                                        // Let's scroll to chapters
-                                        const el = document.getElementById('chapters-section');
-                                        el?.scrollIntoView({ behavior: 'smooth' });
+                                        const firstChapter = mangaChapters[mangaChapters.length - 1];
+                                        loadMangaChapter(firstChapter);
                                     }
                                 }}
                                 disabled={mangaChaptersLoading}
