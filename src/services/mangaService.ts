@@ -161,7 +161,8 @@ export const mangaService = {
     async getScraperMangaDetails(id: string) {
         try {
             const res = await fetch(`${API_BASE}/manga/details/${encodeURIComponent(id)}`);
-            const scraperData = await res.json();
+            const json = await res.json();
+            const scraperData = json.data;
 
             if (!scraperData) return null;
 

@@ -20,9 +20,9 @@ export default function LatestMangaUpdates({ onMangaClick }: LatestMangaUpdatesP
     useEffect(() => {
         const fetchUpdates = async () => {
             try {
-                const { data } = await mangaService.getHotUpdates();
-                if (data) {
-                    setUpdates(data);
+                const updates = await mangaService.getHotUpdates();
+                if (updates) {
+                    setUpdates(updates);
                 }
             } catch (error) {
                 console.error('Failed to fetch hot updates:', error);
