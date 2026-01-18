@@ -220,21 +220,74 @@ export async function getChapterList(mangaId: string): Promise<Chapter[]> {
 
 /**
  * Get page images for a chapter
- * Uses Puppeteer to handle JavaScript rendering and extraction
+ * First tries fast regex extraction, falls back to Puppeteer if needed
  */
 export async function getChapterPages(chapterUrl: string): Promise<ChapterPage[]> {
-    // Regex optimization removed by user request
-    // Falling back to Puppeteer directly
+    // First try fast regex extraction (no browser needed)
+    try {
+        console.log(`[Fast] Fetching ${chapterUrl}...`);
+        const response = await axiosInstance.get(chapterUrl);
+        const html = response.data;
 
+        // Look for JavaScript array containing image URLs
+        // MangaKatana typically stores images in a variable like: var thzq = ['url1', 'url2', ...]
+        const patterns = [
+            /var\s+(thzq|ytaw|htnc)\s*=\s*\[([\s\S]*?)\];/,
+            /var\s+\w+\s*=\s*\[(['"](https?:\/\/[^'"]+['"],?\s*)+)\]/,
+        ];
+
+        for (const pattern of patterns) {
+            const match = html.match(pattern);
+            if (match) {
+                // Extract URLs from the array string
+                const arrayContent = match[2] || match[1];
+                const urlMatches = arrayContent.match(/['"]([^'"]+)['"]/g);
+                if (urlMatches && urlMatches.length > 0) {
+                    const urls = urlMatches
+                        .map((u: string) => u.replace(/['"]/g, ''))
+                        .filter((u: string) => u.includes('http') || u.startsWith('//'));
+
+                    if (urls.length > 0) {
+                        console.log(`[Fast] Found ${urls.length} pages via regex`);
+                        return urls.map((url: string, index: number) => ({
+                            pageNumber: index + 1,
+                            imageUrl: url.startsWith('//') ? `https:${url}` : url
+                        }));
+                    }
+                }
+            }
+        }
+
+        // Try finding data-src in img tags
+        const $ = cheerio.load(html);
+        const imgs: string[] = [];
+        $('#imgs img').each((_, el) => {
+            const src = $(el).attr('data-src') || $(el).attr('src');
+            if (src && (src.includes('http') || src.startsWith('//'))) {
+                imgs.push(src.startsWith('//') ? `https:${src}` : src);
+            }
+        });
+
+        if (imgs.length > 0) {
+            console.log(`[Fast] Found ${imgs.length} pages via cheerio`);
+            return imgs.map((url, index) => ({
+                pageNumber: index + 1,
+                imageUrl: url
+            }));
+        }
+
+        console.log('[Fast] No images found, falling back to Puppeteer...');
+    } catch (fastError) {
+        console.log('[Fast] Failed, falling back to Puppeteer...', fastError);
+    }
+
+    // Fall back to Puppeteer for JavaScript-heavy pages
     let browser = null;
     try {
-        // Launch Puppeteer headless browser
-        console.log(`Launching Puppeteer for ${chapterUrl}...`);
+        console.log(`[Puppeteer] Launching for ${chapterUrl}...`);
         browser = await getBrowserInstance();
 
         const page = await browser.newPage();
-
-        // Set a realistic user agent
         await page.setUserAgent(USER_AGENT);
 
         // Block images/css/fonts/media to speed up loading
@@ -247,15 +300,10 @@ export async function getChapterPages(chapterUrl: string): Promise<ChapterPage[]
             }
         });
 
-        // Navigate to the chapter URL
         await page.goto(chapterUrl, { waitUntil: 'domcontentloaded', timeout: 30000 });
-
-        // Wait a bit for scripts to populate variables
         await new Promise(resolve => setTimeout(resolve, 2000));
 
-        // Evaluate page context to extract global variables
         const imageUrls = await page.evaluate(() => {
-            // Check common variable names
             // @ts-ignore
             if (window.thzq && Array.isArray(window.thzq) && window.thzq.length > 0) return window.thzq;
             // @ts-ignore
@@ -263,7 +311,6 @@ export async function getChapterPages(chapterUrl: string): Promise<ChapterPage[]
             // @ts-ignore
             if (window.htnc && Array.isArray(window.htnc) && window.htnc.length > 0) return window.htnc;
 
-            // Fallback: look for script tags that contain array definitions
             const scripts = Array.from(document.querySelectorAll('script'));
             for (const script of scripts) {
                 const content = script.textContent || '';
@@ -278,7 +325,6 @@ export async function getChapterPages(chapterUrl: string): Promise<ChapterPage[]
                 }
             }
 
-            // Fallback: find all images in #imgs div
             const imgs = document.querySelectorAll('#imgs img');
             if (imgs.length > 0) {
                 return Array.from(imgs)
@@ -290,17 +336,17 @@ export async function getChapterPages(chapterUrl: string): Promise<ChapterPage[]
         });
 
         if (imageUrls && imageUrls.length > 0) {
-            console.log(`Found ${imageUrls.length} pages via Puppeteer`);
+            console.log(`[Puppeteer] Found ${imageUrls.length} pages`);
             return imageUrls.map((url: string, index: number) => ({
                 pageNumber: index + 1,
                 imageUrl: url.startsWith('//') ? `https:${url}` : url
             }));
         }
 
-        console.log('No pages found with Puppeteer');
+        console.log('[Puppeteer] No pages found');
         return [];
     } catch (error) {
-        console.error('Error fetching chapter pages with Puppeteer:', error);
+        console.error('[Puppeteer] Error:', error);
         throw error;
     } finally {
         if (browser) {
