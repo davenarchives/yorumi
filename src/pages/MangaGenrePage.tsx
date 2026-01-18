@@ -10,7 +10,7 @@ const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 // Helper to map AniList response to our Manga interface format
 const mapAnilistToManga = (item: any): Manga => ({
-    mal_id: item.idMal || item.id,
+    mal_id: item.id, // Use AniList ID as primary for routing
     id: item.id,
     title: item.title?.english || item.title?.romaji || 'Unknown',
     title_english: item.title?.english,
