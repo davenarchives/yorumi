@@ -145,7 +145,7 @@ export default function MangaReaderModal({
     };
 
     return (
-        <div className={`fixed inset-0 z-[90] flex items-center justify-center bg-black/95 backdrop-blur-md transition-all duration-300 ${isHeaderVisible ? 'pt-[72px]' : 'pt-0'}`}>
+        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/95 backdrop-blur-md transition-all duration-300 pt-[60px]">
             <div className="w-full h-full flex flex-col bg-[#0a0a0a] relative">
                 {/* 1. Header Row */}
                 <header className={`h-14 shrink-0 flex items-center justify-between px-3 md:px-4 border-b border-white/10 bg-black/90 backdrop-blur-md z-50 gap-2 transition-transform duration-300 absolute top-0 left-0 right-0 ${isHeaderVisible ? 'translate-y-0' : '-translate-y-full'}`}>
@@ -245,7 +245,7 @@ export default function MangaReaderModal({
                 </header>
 
                 {/* 2. Main Layout */}
-                <div className="flex-1 flex min-h-0 relative overflow-hidden">
+                <div className={`flex-1 flex min-h-0 relative overflow-hidden transition-all duration-300 ${isHeaderVisible ? 'pt-14' : 'pt-0'}`}>
 
                     {/* Mobile Backdrop for Sidebars */}
                     {(showChapters || showDetails) && (

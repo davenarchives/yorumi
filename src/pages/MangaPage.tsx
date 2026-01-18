@@ -16,13 +16,7 @@ export default function MangaPage() {
     const navigate = useNavigate();
     const manga = useManga();
 
-    if (manga.mangaLoading && manga.mangaPage === 1) {
-        return (
-            <div className="flex items-center justify-center min-h-screen">
-                <LoadingSpinner size="lg" text="Loading Manga..." />
-            </div>
-        );
-    }
+
 
     const handleSpotlightClick = (mangaId: string) => {
         navigate(`/manga/${mangaId}`);
