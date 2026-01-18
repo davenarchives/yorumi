@@ -328,74 +328,73 @@ export default function WatchPage() {
                         </div>
 
                         {/* Controls Row */}
-                        <div className="flex items-center justify-between gap-4 flex-wrap">
-                            {/* Left: Previous / Next */}
-                            <div className="flex items-center gap-3">
-                                <button
-                                    onClick={handlePrevEp}
-                                    className="px-6 py-2.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white font-medium flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                    disabled={epNum === '1'}
-                                >
-                                    <ChevronLeft className="w-4 h-4" />
-                                    Previous
-                                </button>
-                                <button
-                                    onClick={handleNextEp}
-                                    className="px-6 py-2.5 rounded-lg bg-yellow-500 hover:bg-yellow-400 text-black font-bold flex items-center gap-2 transition-colors"
-                                >
-                                    Next
-                                    <ChevronRight className="w-4 h-4" />
-                                </button>
-                            </div>
+                        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 sm:overflow-visible">
+                            {/* Previous */}
+                            <button
+                                onClick={handlePrevEp}
+                                className="flex-shrink-0 px-4 py-2.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-white font-medium flex items-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                disabled={epNum === '1'}
+                            >
+                                <ChevronLeft className="w-4 h-4" />
+                                <span className="hidden sm:inline">Previous</span>
+                            </button>
 
-                            {/* Right: Tools (Auto, Reload, Expand, Quality) */}
-                            <div className="flex items-center gap-2">
-                                {/* Quality Selector */}
-                                <div className="relative">
-                                    <button
-                                        onClick={() => setShowQualityMenu(!showQualityMenu)}
-                                        className="h-10 px-4 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white font-medium flex items-center gap-2 transition-colors"
-                                    >
-                                        <Settings className="w-4 h-4" />
-                                        {isAutoQuality ? 'Auto' : streams[selectedStreamIndex]?.quality || 'Quality'}
-                                    </button>
-                                    {showQualityMenu && (
-                                        <div className="absolute bottom-full right-0 mb-2 bg-[#1a1a1a] border border-white/10 rounded-lg p-1.5 min-w-[140px] shadow-xl flex flex-col gap-1 z-50">
+                            {/* Next */}
+                            <button
+                                onClick={handleNextEp}
+                                className="flex-shrink-0 px-4 py-2.5 rounded-lg bg-yellow-500 hover:bg-yellow-400 text-black font-bold flex items-center gap-2 transition-colors"
+                            >
+                                <span className="hidden sm:inline">Next</span>
+                                <ChevronRight className="w-4 h-4" />
+                            </button>
+
+                            {/* Quality Selector */}
+                            <div className="relative flex-shrink-0">
+                                <button
+                                    onClick={() => setShowQualityMenu(!showQualityMenu)}
+                                    className="h-10 px-4 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white font-medium flex items-center gap-2 transition-colors"
+                                >
+                                    <Settings className="w-4 h-4" />
+                                    {isAutoQuality ? 'Auto' : streams[selectedStreamIndex]?.quality || 'Quality'}
+                                </button>
+                                {showQualityMenu && (
+                                    <div className="absolute bottom-full left-0 mb-2 bg-[#1a1a1a] border border-white/10 rounded-lg p-1.5 min-w-[140px] shadow-xl flex flex-col gap-1 z-50">
+                                        <button
+                                            onClick={setAutoQuality}
+                                            className={`w-full text-left px-3 py-1.5 text-sm rounded-md transition-colors ${isAutoQuality ? 'bg-yellow-500/20 text-yellow-500' : 'text-gray-300 hover:bg-white/10'}`}
+                                        >
+                                            Auto
+                                        </button>
+                                        {streams.map((stream, idx) => (
                                             <button
-                                                onClick={setAutoQuality}
-                                                className={`w-full text-left px-3 py-1.5 text-sm rounded-md transition-colors ${isAutoQuality ? 'bg-yellow-500/20 text-yellow-500' : 'text-gray-300 hover:bg-white/10'}`}
+                                                key={idx}
+                                                onClick={() => handleQualityChange(idx)}
+                                                className={`w-full text-left px-3 py-1.5 text-sm rounded-md transition-colors ${!isAutoQuality && selectedStreamIndex === idx ? 'bg-yellow-500/20 text-yellow-500' : 'text-gray-300 hover:bg-white/10'}`}
                                             >
-                                                Auto
+                                                {stream.quality || 'Unknown'} {stream.isHls && '(HLS)'}
                                             </button>
-                                            {streams.map((stream, idx) => (
-                                                <button
-                                                    key={idx}
-                                                    onClick={() => handleQualityChange(idx)}
-                                                    className={`w-full text-left px-3 py-1.5 text-sm rounded-md transition-colors ${!isAutoQuality && selectedStreamIndex === idx ? 'bg-yellow-500/20 text-yellow-500' : 'text-gray-300 hover:bg-white/10'}`}
-                                                >
-                                                    {stream.quality || 'Unknown'} {stream.isHls && '(HLS)'}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-
-                                <button
-                                    onClick={reloadPlayer}
-                                    className="h-10 px-4 rounded-lg bg-transparent hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white font-medium flex items-center gap-2 transition-colors"
-                                >
-                                    <RotateCw className="w-4 h-4" />
-                                    Reload
-                                </button>
-
-                                <button
-                                    onClick={toggleExpand}
-                                    className="hidden md:flex h-10 px-4 rounded-lg bg-transparent hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white font-medium items-center gap-2 transition-colors"
-                                >
-                                    {isExpanded ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
-                                    {isExpanded ? 'Collapse' : 'Expand'}
-                                </button>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
+
+                            {/* Reload */}
+                            <button
+                                onClick={reloadPlayer}
+                                className="flex-shrink-0 h-10 px-4 rounded-lg bg-transparent hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white font-medium flex items-center gap-2 transition-colors"
+                            >
+                                <RotateCw className="w-4 h-4" />
+                                <span className="hidden sm:inline">Reload</span>
+                            </button>
+
+                            {/* Expand */}
+                            <button
+                                onClick={toggleExpand}
+                                className="flex-shrink-0 flex h-10 px-4 rounded-lg bg-transparent hover:bg-white/10 border border-white/10 text-gray-300 hover:text-white font-medium items-center gap-2 transition-colors ml-auto sm:ml-0"
+                            >
+                                {isExpanded ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+                                <span className="hidden sm:inline">{isExpanded ? 'Collapse' : 'Expand'}</span>
+                            </button>
                         </div>
                     </div>
                 </div>
