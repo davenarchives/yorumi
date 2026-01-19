@@ -26,7 +26,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const fetchUserAvatar = async () => {
         try {
-            const res = await fetch(`${API_URL}/user/avatar`);
+            const res = await fetch(`${API_URL}/user/avatar`, { cache: 'no-store' });
             if (res.ok) {
                 const data = await res.json();
                 if (data.avatar) {
@@ -64,21 +64,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     console.error("Failed to sync on login", e);
                 }
 
-                // 1. Try to get avatar from Backend (DB)
+                // 1. Optimistically load from LocalStorage for instant UI (No "D" flash)
+                const storedAvatar = localStorage.getItem(`avatar_${currentUser.uid}`);
+                if (storedAvatar) {
+                    setAvatar(storedAvatar);
+                }
+
+                // 2. Fetch from Backend (Source of Truth) and update if different
                 const dbAvatar = await fetchUserAvatar();
 
-                if (!dbAvatar) {
-                    // 2. If no DB avatar, check legacy LocalStorage
-                    const storedAvatar = localStorage.getItem(`avatar_${currentUser.uid}`);
+                if (dbAvatar) {
+                    if (dbAvatar !== storedAvatar) {
+                        setAvatar(dbAvatar);
+                        localStorage.setItem(`avatar_${currentUser.uid}`, dbAvatar);
+                    }
+                } else {
+                    // 3. If no DB avatar but we have local, sync local to DB
                     if (storedAvatar) {
-                        setAvatar(storedAvatar);
-                        // Migrate to DB
                         saveUserAvatar(storedAvatar);
                     } else {
-                        // 3. If nothing, generate random and save to DB
+                        // 4. If neither, generate new random
                         const newAvatar = getRandomAvatar();
                         setAvatar(newAvatar);
                         saveUserAvatar(newAvatar);
+                        localStorage.setItem(`avatar_${currentUser.uid}`, newAvatar);
                     }
                 }
             } else {
