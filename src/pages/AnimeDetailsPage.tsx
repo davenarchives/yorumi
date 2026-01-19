@@ -99,7 +99,13 @@ export default function AnimeDetailsPage() {
             storage.addToWatchList({
                 id: animeId,
                 title: selectedAnime.title,
-                image: selectedAnime.images.jpg.large_image_url
+                image: selectedAnime.images.jpg.large_image_url,
+                score: selectedAnime.score,
+                type: selectedAnime.type,
+                totalCount: selectedAnime.episodes || episodes.length,
+                genres: selectedAnime.genres?.map(g => g.name),
+                mediaStatus: selectedAnime.status,
+                synopsis: selectedAnime.synopsis
             });
             setInList(true);
         }

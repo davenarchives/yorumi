@@ -231,14 +231,20 @@ export default function MangaDetailsPage() {
                                         storage.addToReadList({
                                             id: selectedManga.mal_id.toString(),
                                             title: selectedManga.title,
-                                            image: selectedManga.images.jpg.large_image_url
+                                            image: selectedManga.images.jpg.large_image_url,
+                                            score: selectedManga.score,
+                                            type: selectedManga.type,
+                                            totalCount: selectedManga.chapters || mangaChapters.length,
+                                            genres: selectedManga.genres?.map((g: any) => g.name),
+                                            mediaStatus: selectedManga.status,
+                                            synopsis: selectedManga.synopsis
                                         });
                                         navigate('.', { replace: true });
                                     }
                                 }}
                                 className={`h-12 px-8 text-lg font-bold rounded-full transition-colors border flex items-center gap-2 ${storage.isInReadList(selectedManga.mal_id.toString())
-                                        ? 'bg-yorumi-accent text-black border-yorumi-accent'
-                                        : 'bg-white/10 hover:bg-white/20 text-white border-white/10'
+                                    ? 'bg-yorumi-accent text-black border-yorumi-accent'
+                                    : 'bg-white/10 hover:bg-white/20 text-white border-white/10'
                                     }`}
                             >
                                 {storage.isInReadList(selectedManga.mal_id.toString()) ? (

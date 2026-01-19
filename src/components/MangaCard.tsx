@@ -6,9 +6,11 @@ interface MangaCardProps {
     onClick: (manga: Manga) => void;
     onReadClick?: (manga: Manga) => void;
     onMouseEnter?: (manga: Manga) => void;
+    inList?: boolean;
+    onToggleList?: (manga: Manga) => void;
 }
 
-const MangaCard: React.FC<MangaCardProps> = ({ manga, onClick, onReadClick, onMouseEnter }) => {
+const MangaCard: React.FC<MangaCardProps> = ({ manga, onClick, onReadClick, onMouseEnter, inList, onToggleList }) => {
     const cardRef = React.useRef<HTMLDivElement>(null);
     const [rotation, setRotation] = React.useState({ x: 0, y: 0 });
     const [glare, setGlare] = React.useState({ x: 50, y: 50, opacity: 0 });
@@ -177,6 +179,21 @@ const MangaCard: React.FC<MangaCardProps> = ({ manga, onClick, onReadClick, onMo
                         >
                             <span className="w-2 h-2 bg-white rounded-full"></span>
                             DETAIL
+                        </button>
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onToggleList?.(manga); }}
+                            className={`flex items-center justify-center p-1.5 rounded transition-colors ${inList ? 'bg-yorumi-accent text-black hover:bg-yorumi-accent/80' : 'bg-white/10 hover:bg-white/20 text-white'}`}
+                            title={inList ? "Remove from List" : "Add to List"}
+                        >
+                            {inList ? (
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                            ) : (
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                                </svg>
+                            )}
                         </button>
                     </div>
                 </div>

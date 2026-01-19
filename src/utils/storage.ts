@@ -24,6 +24,13 @@ export interface WatchListItem {
     image: string;
     addedAt: number;
     status: 'watching' | 'completed' | 'plan_to_watch';
+    score?: number;
+    currentProgress?: number;
+    totalCount?: number; // Episodes
+    type?: string;
+    genres?: string[];
+    mediaStatus?: string;
+    synopsis?: string;
 }
 
 export interface ReadListItem {
@@ -32,6 +39,13 @@ export interface ReadListItem {
     image: string;
     addedAt: number;
     status: 'reading' | 'completed' | 'plan_to_read';
+    score?: number;
+    currentProgress?: number;
+    totalCount?: number; // Chapters
+    type?: string;
+    genres?: string[];
+    mediaStatus?: string;
+    synopsis?: string;
 }
 
 const STORAGE_KEYS = {
@@ -152,7 +166,7 @@ export const storage = {
 };
 
 // Cloud Sync Helper
-import { doc, setDoc, getDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../services/firebase';
 
 const getUserRef = () => {

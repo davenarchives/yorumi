@@ -120,6 +120,8 @@ const TabButton = ({ active, onClick, icon, label }: { active: boolean; onClick:
 
 // Add component import
 import AvatarSelectionModal from '../components/modals/AvatarSelectionModal';
+import AnimeCard from '../components/AnimeCard';
+import MangaCard from '../components/MangaCard';
 
 const ProfileTab = ({ user, avatar }: { user: any, avatar: string | null }) => {
     const { updateName, updateAvatar } = useAuth();
@@ -337,28 +339,34 @@ const WatchListTab = () => {
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
-                {watchlist.map((item) => (
-                    <div
-                        key={item.id}
-                        onClick={() => navigate(`/anime/${item.id}`)}
-                        className="aspect-[2/3] bg-[#1c1c1c] rounded-xl border border-white/5 flex flex-col items-center justify-center group cursor-pointer hover:border-yorumi-accent/50 transition-colors relative overflow-hidden"
-                    >
-                        {item.image ? (
-                            <>
-                                <img src={item.image} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                                <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-                                    <h4 className="font-bold text-white text-sm line-clamp-2">{item.title}</h4>
-                                </div>
-                            </>
-                        ) : (
-                            <>
-                                <Heart className="w-8 h-8 text-gray-600 mb-2 group-hover:text-yorumi-accent transition-colors" />
-                                <span className="text-gray-500 text-sm font-medium">Anime Item</span>
-                            </>
-                        )}
-                    </div>
-                ))}
+                {watchlist.map((item) => {
+                    // Map stored data to Anime interface
+                    const animeData: any = {
+                        mal_id: parseInt(item.id),
+                        title: item.title,
+                        images: { jpg: { large_image_url: item.image, image_url: item.image } },
+                        score: item.score || 0,
+                        type: item.type,
+                        status: item.mediaStatus,
+                        episodes: item.totalCount,
+                        genres: item.genres?.map((g: string) => ({ name: g })) || [],
+                        synopsis: item.synopsis
+                    };
+
+                    return (
+                        <AnimeCard
+                            key={item.id}
+                            anime={animeData}
+                            onClick={() => navigate(`/anime/${item.id}`)}
+                            onWatchClick={() => navigate(`/watch/${item.id}`)}
+                            inList={true}
+                            onToggleList={() => {
+                                storage.removeFromWatchList(item.id);
+                                setWatchlist(prev => prev.filter(i => i.id !== item.id));
+                            }}
+                        />
+                    );
+                })}
             </div>
         </div>
     );
@@ -447,28 +455,34 @@ const ReadListTab = () => {
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
-                {readlist.map((item) => (
-                    <div
-                        key={item.id}
-                        onClick={() => navigate(`/manga/${item.id}`)}
-                        className="aspect-[2/3] bg-[#1c1c1c] rounded-xl border border-white/5 flex flex-col items-center justify-center group cursor-pointer hover:border-yorumi-accent/50 transition-colors relative overflow-hidden"
-                    >
-                        {item.image ? (
-                            <>
-                                <img src={item.image} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                                <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-                                    <h4 className="font-bold text-white text-sm line-clamp-2">{item.title}</h4>
-                                </div>
-                            </>
-                        ) : (
-                            <>
-                                <BookOpen className="w-8 h-8 text-gray-600 mb-2 group-hover:text-yorumi-accent transition-colors" />
-                                <span className="text-gray-500 text-sm font-medium">Manga Item</span>
-                            </>
-                        )}
-                    </div>
-                ))}
+                {readlist.map((item) => {
+                    // Map stored data to Manga interface
+                    const mangaData: any = {
+                        mal_id: parseInt(item.id),
+                        title: item.title,
+                        images: { jpg: { large_image_url: item.image, image_url: item.image } },
+                        score: item.score || 0,
+                        type: item.type,
+                        status: item.mediaStatus,
+                        chapters: item.totalCount,
+                        genres: item.genres?.map((g: string) => ({ name: g })) || [],
+                        synopsis: item.synopsis
+                    };
+
+                    return (
+                        <MangaCard
+                            key={item.id}
+                            manga={mangaData}
+                            onClick={() => navigate(`/manga/${item.id}`)}
+                            onReadClick={() => navigate(`/manga/${item.id}`)}
+                            inList={true}
+                            onToggleList={() => {
+                                storage.removeFromReadList(item.id);
+                                setReadlist(prev => prev.filter(i => i.id !== item.id));
+                            }}
+                        />
+                    );
+                })}
             </div>
         </div>
     );
