@@ -116,7 +116,7 @@ export function useManga() {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }, [fetchViewAll, viewMode]);
 
-    const handleMangaClick = async (manga: Manga) => {
+    const handleMangaClick = useCallback(async (manga: Manga) => {
         setSelectedManga(manga);
         setShowMangaDetails(true);
         setMangaChaptersLoading(true);
@@ -390,7 +390,7 @@ export function useManga() {
         } finally {
             setMangaChaptersLoading(false);
         }
-    };
+    }, []);
 
     const loadMangaChapter = async (chapter: MangaChapter) => {
         // Prevent race conditions: only process the latest request
@@ -515,10 +515,10 @@ export function useManga() {
         return () => window.removeEventListener('popstate', onPopState);
     }, [currentMangaChapter, showMangaDetails]);
 
-    const handleMangaClickWithHistory = async (manga: Manga) => {
+    const handleMangaClickWithHistory = useCallback(async (manga: Manga) => {
         window.history.pushState({ modal: 'manga_details', id: manga.mal_id }, '', `#manga/${manga.mal_id}`);
         await handleMangaClick(manga);
-    };
+    }, [handleMangaClick]);
 
     const loadMangaChapterWithHistory = async (chapter: MangaChapter) => {
         window.history.pushState({ modal: 'manga_reader' }, '', `#read/${selectedManga?.mal_id}/${chapter.id}`);
@@ -550,7 +550,7 @@ export function useManga() {
     const zoomIn = () => setZoomLevel(prev => Math.min(prev + 10, 100));
     const zoomOut = () => setZoomLevel(prev => Math.max(prev - 10, 30));
 
-    const fetchMangaDetails = async (id: string | number) => {
+    const fetchMangaDetails = useCallback(async (id: string | number) => {
         setMangaLoading(true);
         setSelectedManga(null);
         setMangaChapters([]);
@@ -565,16 +565,19 @@ export function useManga() {
                 // 1. Fetch AniList Metadata
                 const { data } = await mangaService.getMangaDetails(id);
                 console.log('Fetched manga data:', data);
-                console.log('Synonyms from API:', data?.synonyms);
-                if (data) {
+
+                if (data && data.mal_id) {
                     setSelectedManga(data);
                     // 2. Fetch Chapters (search scraper via handleMangaClick logic)
                     await handleMangaClick(data);
+                } else {
+                    console.error('Manga details not found for ID:', id);
+                    // Optional: Set some error state here if UI handles it
                 }
             } else {
                 // 1. Fetch Scraper Metadata (String ID)
                 const data = await mangaService.getScraperMangaDetails(String(id));
-                if (data) {
+                if (data && data.mal_id) {
                     setSelectedManga(data);
 
                     // 2. Fetch Chapters directly using the known scraper ID
@@ -604,7 +607,7 @@ export function useManga() {
         } finally {
             setMangaLoading(false);
         }
-    };
+    }, [handleMangaClick]); // Depend on handleMangaClick
 
     const changeMangaPage = (page: number) => {
         setMangaLoading(true);
