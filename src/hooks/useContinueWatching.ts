@@ -37,8 +37,9 @@ export function useContinueWatching() {
 
         const image = anime.anilist_banner_image || anime.images.jpg.large_image_url;
 
+        const validId = anime.id || anime.mal_id;
         const progress: WatchProgress = {
-            animeId: anime.mal_id.toString(),
+            animeId: validId.toString(),
             episodeId: episode.session || (episode as any).id || '',
             episodeNumber: typeof episode.episodeNumber === 'string' ? parseFloat(episode.episodeNumber) : episode.episodeNumber,
             timestamp: Date.now(), // For video position if we track it
@@ -48,7 +49,7 @@ export function useContinueWatching() {
         };
 
         try {
-            await setDoc(doc(db, 'users', user.uid, 'continueWatching', anime.mal_id.toString()), progress);
+            await setDoc(doc(db, 'users', user.uid, 'continueWatching', validId.toString()), progress);
         } catch (error) {
             console.error("Failed to save progress to Firestore:", error);
         }
