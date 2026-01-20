@@ -106,9 +106,15 @@ export const mangaService = {
 
     // Get manga details by ID
     async getMangaDetails(id: number | string) {
-        const res = await fetch(`${API_BASE}/anilist/manga/${id}`);
-        const data = await res.json();
-        return { data: mapAnilistToManga(data) };
+        try {
+            const res = await fetch(`${API_BASE}/anilist/manga/${id}`);
+            if (!res.ok) throw new Error('Failed to fetch details');
+            const data = await res.json();
+            return { data: mapAnilistToManga(data) };
+        } catch (e) {
+            console.error('getMangaDetails failed:', e);
+            return { data: null };
+        }
     },
 
     // Get manga chapters from MangaKatana scraper
