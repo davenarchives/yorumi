@@ -1,8 +1,8 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Check, Plus } from 'lucide-react';
 import { useManga } from '../hooks/useManga';
-import { storage } from '../utils/storage';
+import { useReadList } from '../hooks/useReadList';
 import LoadingSpinner from '../components/LoadingSpinner';
 import MangaCard from '../components/MangaCard';
 import MangaReaderModal from '../components/modals/MangaReaderModal';
@@ -95,22 +95,38 @@ export default function MangaDetailsPage() {
         zoomOut
     } = useManga();
 
+    const { isInReadList, addToReadList, removeFromReadList } = useReadList();
+
     const [activeTab, setActiveTab] = useState<'summary' | 'relations'>('summary');
 
-    // Fetch details on mount or ID change
-    const lastFetchedId = useRef<string | null>(null);
+
 
     // Fetch details on mount or ID change
+    // Scroll to top on mount
     useEffect(() => {
         window.scrollTo({ top: 0, behavior: 'instant' });
+    }, []);
 
-        // Prevent infinite loops / duplicate fetches
-        if (id && id !== lastFetchedId.current) {
+    // Auto-open reader if navigated from "Continue Reading"
+    useEffect(() => {
+        if (location.state?.chapterId && mangaChapters.length > 0) {
+            const targetChapter = mangaChapters.find(c => c.id === location.state.chapterId);
+            if (targetChapter) {
+                // Small delay to ensure modal transition works
+                setTimeout(() => {
+                    loadMangaChapter(targetChapter);
+                }, 100);
+            }
+        }
+    }, [location.state, mangaChapters, loadMangaChapter]);
+
+    // Fetch details on ID change
+    useEffect(() => {
+        if (id) {
             console.log(`[MangaDetailsPage] Fetching details for ID: ${id}`);
-            lastFetchedId.current = id;
             fetchMangaDetails(id);
         }
-    }, [id]);
+    }, [id, fetchMangaDetails]);
 
     console.log('[MangaDetailsPage] Rendered with ID:', id);
 
@@ -122,10 +138,28 @@ export default function MangaDetailsPage() {
         }
     };
 
-    if (mangaLoading || !selectedManga) {
+    if (mangaLoading) {
         return (
-            <div className="min-h-screen flex items-center justify-center">
+            <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a]">
                 <LoadingSpinner size="lg" text="Loading Manga Details..." />
+            </div>
+        );
+    }
+
+    if (!selectedManga) {
+        return (
+            <div className="min-h-screen flex flex-col items-center justify-center bg-[#0a0a0a] text-white gap-4">
+                <div className="text-6xl font-black text-white/10">404</div>
+                <h1 className="text-2xl font-bold">Manga Not Found</h1>
+                <p className="text-gray-400 max-w-md text-center">
+                    The manga you are looking for isn't available right now. It might be an invalid ID or the source (AniList) is currently down.
+                </p>
+                <button
+                    onClick={handleBack}
+                    className="px-6 py-3 bg-white/10 hover:bg-white/20 rounded-full font-bold transition-colors mt-4"
+                >
+                    Go Back
+                </button>
             </div>
         );
     }
@@ -223,13 +257,14 @@ export default function MangaDetailsPage() {
                             </button>
                             <button
                                 onClick={() => {
-                                    if (storage.isInReadList(selectedManga.mal_id.toString())) {
-                                        storage.removeFromReadList(selectedManga.mal_id.toString());
-                                        // Force list update (hacky, ideally use context/event)
-                                        navigate('.', { replace: true });
+                                    if (!selectedManga) return;
+                                    const mangaId = selectedManga.mal_id.toString();
+
+                                    if (isInReadList(mangaId)) {
+                                        removeFromReadList(mangaId);
                                     } else {
-                                        storage.addToReadList({
-                                            id: selectedManga.mal_id.toString(),
+                                        addToReadList({
+                                            id: mangaId,
                                             title: selectedManga.title,
                                             image: selectedManga.images.jpg.large_image_url,
                                             score: selectedManga.score,
@@ -237,17 +272,17 @@ export default function MangaDetailsPage() {
                                             totalCount: selectedManga.chapters || mangaChapters.length,
                                             genres: selectedManga.genres?.map((g: any) => g.name),
                                             mediaStatus: selectedManga.status,
-                                            synopsis: selectedManga.synopsis
+                                            synopsis: selectedManga.synopsis,
+                                            status: 'reading' // Default status
                                         });
-                                        navigate('.', { replace: true });
                                     }
                                 }}
-                                className={`h-12 px-8 text-lg font-bold rounded-full transition-colors border flex items-center gap-2 ${storage.isInReadList(selectedManga.mal_id.toString())
+                                className={`h-12 px-8 text-lg font-bold rounded-full transition-colors border flex items-center gap-2 ${isInReadList(selectedManga.mal_id.toString())
                                     ? 'bg-yorumi-accent text-black border-yorumi-accent'
                                     : 'bg-white/10 hover:bg-white/20 text-white border-white/10'
                                     }`}
                             >
-                                {storage.isInReadList(selectedManga.mal_id.toString()) ? (
+                                {isInReadList(selectedManga.mal_id.toString()) ? (
                                     <>
                                         <Check className="w-5 h-5" />
                                         In List

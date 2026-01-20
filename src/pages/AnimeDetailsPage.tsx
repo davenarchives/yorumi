@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Play, Plus, Check } from 'lucide-react';
 import { useAnime } from '../hooks/useAnime'; // We might reuse this for episode prefetching
-import { storage } from '../utils/storage';
+import { useWatchList } from '../hooks/useWatchList';
 import LoadingSpinner from '../components/LoadingSpinner';
 import AnimeCard from '../components/AnimeCard';
 import type { Anime, Episode } from '../types/anime';
@@ -80,23 +80,20 @@ export default function AnimeDetailsPage() {
     }, [id, location.state]);
 
     const { selectedAnime, episodes, epLoading, detailsLoading, error } = animeHook;
+    const { isInWatchList, addToWatchList, removeFromWatchList } = useWatchList();
     const [activeTab, setActiveTab] = useState<'summary' | 'relations'>('summary');
-    const [inList, setInList] = useState(false);
 
-    useEffect(() => {
-        if (selectedAnime) {
-            setInList(storage.isInWatchList(selectedAnime.mal_id.toString()));
-        }
-    }, [selectedAnime]);
+    // Derived state for button, but useWatchList is reactive so we can just use isInWatchList(id)
+    const animeId = selectedAnime ? (selectedAnime.id || selectedAnime.mal_id).toString() : '';
+    const inList = isInWatchList(animeId);
 
     const handleToggleList = () => {
-        if (!selectedAnime) return;
-        const animeId = selectedAnime.mal_id.toString();
+        if (!selectedAnime || !animeId) return;
+
         if (inList) {
-            storage.removeFromWatchList(animeId);
-            setInList(false);
+            removeFromWatchList(animeId);
         } else {
-            storage.addToWatchList({
+            addToWatchList({
                 id: animeId,
                 title: selectedAnime.title,
                 image: selectedAnime.images.jpg.large_image_url,
@@ -105,9 +102,9 @@ export default function AnimeDetailsPage() {
                 totalCount: selectedAnime.episodes || episodes.length,
                 genres: selectedAnime.genres?.map(g => g.name),
                 mediaStatus: selectedAnime.status,
-                synopsis: selectedAnime.synopsis
+                synopsis: selectedAnime.synopsis,
+                status: 'watching'
             });
-            setInList(true);
         }
     };
 
