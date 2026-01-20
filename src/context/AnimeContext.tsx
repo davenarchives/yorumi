@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useRef, useEffect, type ReactNode 
 import type { Anime, Episode } from '../types/anime';
 import { animeService } from '../services/animeService';
 import { useContinueWatching } from '../hooks/useContinueWatching';
+import { storage } from '../utils/storage';
 
 interface AnimeContextType {
     // State
@@ -54,6 +55,10 @@ interface AnimeContextType {
     continueWatchingList: any[];
     saveProgress: (anime: Anime, episode: any) => void;
     removeFromHistory: (malId: number) => void;
+
+    // Episode Tracking
+    watchedEpisodes: Set<number>;
+    markEpisodeComplete: (episodeNumber: number) => void;
 }
 
 const AnimeContext = createContext<AnimeContextType | undefined>(undefined);
@@ -67,6 +72,7 @@ export function AnimeProvider({ children }: { children: ReactNode }) {
     const [trendingAnime, setTrendingAnime] = useState<Anime[]>([]);
     const [popularSeason, setPopularSeason] = useState<Anime[]>([]);
     const [selectedAnime, setSelectedAnime] = useState<Anime | null>(null);
+    const [watchedEpisodes, setWatchedEpisodes] = useState<Set<number>>(new Set());
 
     // UI State (Modals - Kept for compatibility but might not be used in page router mainly)
     const [showAnimeDetails, setShowAnimeDetails] = useState(false);
@@ -369,6 +375,24 @@ export function AnimeProvider({ children }: { children: ReactNode }) {
         }
     };
 
+
+
+    // --- Episode Tracking ---
+    useEffect(() => {
+        if (selectedAnime) {
+            const history = storage.getWatchedEpisodes(String(selectedAnime.mal_id));
+            setWatchedEpisodes(new Set(history));
+        } else {
+            setWatchedEpisodes(new Set());
+        }
+    }, [selectedAnime]);
+
+    const markEpisodeComplete = (episodeNumber: number) => {
+        if (!selectedAnime) return;
+        storage.markEpisodeAsWatched(String(selectedAnime.mal_id), episodeNumber);
+        setWatchedEpisodes(prev => new Set(prev).add(episodeNumber));
+    };
+
     // --- Actions ---
 
     const handleAnimeClick = async (anime: Anime) => {
@@ -532,7 +556,8 @@ export function AnimeProvider({ children }: { children: ReactNode }) {
             viewMode, setEpisodeSearchQuery, handleAnimeClick, startWatching,
             watchAnime, closeDetails, closeWatch, closeAllModals, changePage,
             openViewAll, closeViewAll, changeViewAllPage, prefetchEpisodes, prefetchPage,
-            continueWatchingList, saveProgress, removeFromHistory, fetchHomeData
+            continueWatchingList, saveProgress, removeFromHistory, fetchHomeData,
+            watchedEpisodes, markEpisodeComplete
         }}>
             {children}
         </AnimeContext.Provider>
