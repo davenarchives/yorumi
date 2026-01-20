@@ -3,9 +3,10 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { User, History, Heart, Pencil, Check, X, BookOpen } from 'lucide-react';
-import { storage } from '../utils/storage';
 import { useContinueWatching } from '../hooks/useContinueWatching';
 import { useContinueReading } from '../hooks/useContinueReading';
+import { useWatchList } from '../hooks/useWatchList';
+import { useReadList } from '../hooks/useReadList';
 
 type TabType = 'profile' | 'continue-watching' | 'watchlist' | 'continue-reading' | 'readlist';
 
@@ -257,7 +258,7 @@ const ProfileTab = ({ user, avatar }: { user: any, avatar: string | null }) => {
 };
 
 const ContinueWatchingTab = () => {
-    const { continueWatchingList: history } = useContinueWatching();
+    const { continueWatchingList: history, removeFromHistory } = useContinueWatching();
     const navigate = useNavigate();
 
     if (history.length === 0) {
@@ -285,6 +286,16 @@ const ContinueWatchingTab = () => {
                             <>
                                 <img src={item.animeImage} alt={item.animeTitle} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" />
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 to-transparent" />
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        removeFromHistory(parseInt(item.animeId));
+                                    }}
+                                    className="absolute top-2 right-2 p-1.5 bg-black/50 hover:bg-red-500/80 rounded-full text-white opacity-0 group-hover:opacity-100 transition-all z-20"
+                                    title="Remove from history"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
                                 <div className="absolute bottom-4 left-4 right-4">
                                     <h4 className="font-bold text-white truncate">{item.animeTitle}</h4>
                                     <p className="text-xs text-yorumi-accent">Episode {item.episodeNumber}</p>
@@ -304,15 +315,17 @@ const ContinueWatchingTab = () => {
 };
 
 const WatchListTab = () => {
-    const [watchlist, setWatchlist] = useState<any[]>([]);
+    const { watchList, removeFromWatchList, loading } = useWatchList();
     const navigate = useNavigate();
 
-    useEffect(() => {
-        const data = storage.getWatchList();
-        setWatchlist(data);
-    }, []);
+    // Migrating local to cloud could happen here once, but for now just show cloud
+    // Optionally: If cloud is empty and local has items, prompt?
 
-    if (watchlist.length === 0) {
+    if (loading) {
+        return <div className="py-20 text-center text-gray-400">Loading Watch List...</div>;
+    }
+
+    if (watchList.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center py-20 text-center">
                 <Heart className="w-16 h-16 text-gray-700 mb-4" />
@@ -324,11 +337,8 @@ const WatchListTab = () => {
 
     return (
         <div className="space-y-6">
-
-
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
-                {watchlist.map((item) => {
-                    // Map stored data to Anime interface
+                {watchList.map((item) => {
                     const animeData: any = {
                         mal_id: parseInt(item.id),
                         title: item.title,
@@ -348,10 +358,7 @@ const WatchListTab = () => {
                             onClick={() => navigate(`/anime/${item.id}`)}
                             onWatchClick={() => navigate(`/watch/${item.id}`)}
                             inList={true}
-                            onToggleList={() => {
-                                storage.removeFromWatchList(item.id);
-                                setWatchlist(prev => prev.filter(i => i.id !== item.id));
-                            }}
+                            onToggleList={() => removeFromWatchList(item.id)}
                         />
                     );
                 })}
@@ -361,7 +368,7 @@ const WatchListTab = () => {
 };
 
 const ContinueReadingTab = () => {
-    const { continueReadingList: history } = useContinueReading();
+    const { continueReadingList: history, removeFromHistory } = useContinueReading();
     const navigate = useNavigate();
 
     if (history.length === 0) {
@@ -376,19 +383,27 @@ const ContinueReadingTab = () => {
 
     return (
         <div className="space-y-6">
-
-
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                 {history.map((item) => (
                     <div
                         key={item.mangaId}
-                        onClick={() => navigate(`/read/${item.mangaId}?chapter=${item.chapterId}`)}
+                        onClick={() => navigate(`/manga/${item.mangaId}`, { state: { chapterId: item.chapterId } })}
                         className="aspect-video bg-[#1c1c1c] rounded-xl border border-white/5 flex flex-col items-center justify-center group cursor-pointer hover:border-yorumi-accent/50 transition-colors relative overflow-hidden"
                     >
                         {item.mangaImage ? (
                             <>
                                 <img src={item.mangaImage} alt={item.mangaTitle} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" />
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 to-transparent" />
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        removeFromHistory(item.mangaId);
+                                    }}
+                                    className="absolute top-2 right-2 p-1.5 bg-black/50 hover:bg-red-500/80 rounded-full text-white opacity-0 group-hover:opacity-100 transition-all z-20"
+                                    title="Remove from history"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
                                 <div className="absolute bottom-4 left-4 right-4">
                                     <h4 className="font-bold text-white truncate">{item.mangaTitle}</h4>
                                     <p className="text-xs text-yorumi-accent">Chapter {item.chapterNumber}</p>
@@ -406,17 +421,15 @@ const ContinueReadingTab = () => {
         </div>
     );
 };
-
 const ReadListTab = () => {
-    const [readlist, setReadlist] = useState<any[]>([]);
+    const { readList, removeFromReadList, loading } = useReadList();
     const navigate = useNavigate();
 
-    useEffect(() => {
-        const data = storage.getReadList();
-        setReadlist(data);
-    }, []);
+    if (loading) {
+        return <div className="py-20 text-center text-gray-400">Loading Read List...</div>;
+    }
 
-    if (readlist.length === 0) {
+    if (readList.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center py-20 text-center">
                 <BookOpen className="w-16 h-16 text-gray-700 mb-4" />
@@ -428,11 +441,8 @@ const ReadListTab = () => {
 
     return (
         <div className="space-y-6">
-
-
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
-                {readlist.map((item) => {
-                    // Map stored data to Manga interface
+                {readList.map((item) => {
                     const mangaData: any = {
                         mal_id: parseInt(item.id),
                         title: item.title,
@@ -452,10 +462,7 @@ const ReadListTab = () => {
                             onClick={() => navigate(`/manga/${item.id}`)}
                             onReadClick={() => navigate(`/manga/${item.id}`)}
                             inList={true}
-                            onToggleList={() => {
-                                storage.removeFromReadList(item.id);
-                                setReadlist(prev => prev.filter(i => i.id !== item.id));
-                            }}
+                            onToggleList={() => removeFromReadList(item.id)}
                         />
                     );
                 })}
