@@ -51,7 +51,9 @@ export interface ReadListItem {
 const STORAGE_KEYS = {
     CONTINUE_WATCHING: 'yorumi_continue_watching',
     WATCH_LIST: 'yorumi_watch_list',
-    READ_LIST: 'yorumi_read_list'
+    READ_LIST: 'yorumi_read_list',
+    EPISODE_HISTORY: 'yorumi_episode_history',
+    CHAPTER_HISTORY: 'yorumi_chapter_history'
 };
 
 export const storage = {
@@ -162,6 +164,62 @@ export const storage = {
     isInReadList: (mangaId: string): boolean => {
         const list = storage.getReadList();
         return list.some(item => item.id === mangaId);
+    },
+
+    // Episode History (Watched Episodes)
+    markEpisodeAsWatched: (animeId: string, episodeNumber: number) => {
+        try {
+            const history = storage.getEpisodeHistory();
+            if (!history[animeId]) history[animeId] = [];
+            if (!history[animeId].includes(episodeNumber)) {
+                history[animeId].push(episodeNumber);
+                localStorage.setItem(STORAGE_KEYS.EPISODE_HISTORY, JSON.stringify(history));
+            }
+        } catch (error) {
+            console.error('Failed to mark episode as watched:', error);
+        }
+    },
+
+    getEpisodeHistory: (): Record<string, number[]> => {
+        try {
+            const data = localStorage.getItem(STORAGE_KEYS.EPISODE_HISTORY);
+            return data ? JSON.parse(data) : {};
+        } catch (error) {
+            return {};
+        }
+    },
+
+    getWatchedEpisodes: (animeId: string): number[] => {
+        const history = storage.getEpisodeHistory();
+        return history[animeId] || [];
+    },
+
+    // Chapter History (Read Chapters)
+    markChapterAsRead: (mangaId: string, chapterId: string) => {
+        try {
+            const history = storage.getChapterHistory();
+            if (!history[mangaId]) history[mangaId] = [];
+            if (!history[mangaId].includes(chapterId)) {
+                history[mangaId].push(chapterId);
+                localStorage.setItem(STORAGE_KEYS.CHAPTER_HISTORY, JSON.stringify(history));
+            }
+        } catch (error) {
+            console.error('Failed to mark chapter as read:', error);
+        }
+    },
+
+    getChapterHistory: (): Record<string, string[]> => {
+        try {
+            const data = localStorage.getItem(STORAGE_KEYS.CHAPTER_HISTORY);
+            return data ? JSON.parse(data) : {};
+        } catch (error) {
+            return {};
+        }
+    },
+
+    getReadChapters: (mangaId: string): string[] => {
+        const history = storage.getChapterHistory();
+        return history[mangaId] || [];
     }
 };
 
@@ -184,12 +242,16 @@ export const syncStorage = {
         const watchList = storage.getWatchList();
         const readList = storage.getReadList();
         const continueWatching = storage.getContinueWatching();
+        const episodeHistory = storage.getEpisodeHistory();
+        const chapterHistory = storage.getChapterHistory();
 
         try {
             await setDoc(userRef, {
                 watchList,
                 readList,
                 continueWatching,
+                episodeHistory,
+                chapterHistory,
                 lastSynced: Date.now()
             }, { merge: true });
         } catch (error) {
@@ -243,6 +305,32 @@ export const syncStorage = {
                         .slice(0, 20);
                     localStorage.setItem(STORAGE_KEYS.CONTINUE_WATCHING, JSON.stringify(merged));
                 }
+
+                // Merge Episode History
+                if (data.episodeHistory) {
+                    const local = storage.getEpisodeHistory();
+                    const merged: Record<string, number[]> = { ...local };
+                    Object.entries(data.episodeHistory as Record<string, number[]>).forEach(([animeId, episodes]) => {
+                        if (!merged[animeId]) merged[animeId] = [];
+                        episodes.forEach(ep => {
+                            if (!merged[animeId].includes(ep)) merged[animeId].push(ep);
+                        });
+                    });
+                    localStorage.setItem(STORAGE_KEYS.EPISODE_HISTORY, JSON.stringify(merged));
+                }
+
+                // Merge Chapter History
+                if (data.chapterHistory) {
+                    const local = storage.getChapterHistory();
+                    const merged: Record<string, string[]> = { ...local };
+                    Object.entries(data.chapterHistory as Record<string, string[]>).forEach(([mangaId, chapters]) => {
+                        if (!merged[mangaId]) merged[mangaId] = [];
+                        chapters.forEach(ch => {
+                            if (!merged[mangaId].includes(ch)) merged[mangaId].push(ch);
+                        });
+                    });
+                    localStorage.setItem(STORAGE_KEYS.CHAPTER_HISTORY, JSON.stringify(merged));
+                }
             }
         } catch (error) {
             console.error('Failed to pull from cloud:', error);
@@ -278,5 +366,17 @@ storage.addToReadList = (item, status) => {
 const originalRemoveFromReadList = storage.removeFromReadList;
 storage.removeFromReadList = (id) => {
     originalRemoveFromReadList(id);
+    if (auth.currentUser) syncStorage.pushToCloud();
+};
+
+const originalMarkEpisodeAsWatched = storage.markEpisodeAsWatched;
+storage.markEpisodeAsWatched = (animeId, episodeNumber) => {
+    originalMarkEpisodeAsWatched(animeId, episodeNumber);
+    if (auth.currentUser) syncStorage.pushToCloud();
+};
+
+const originalMarkChapterAsRead = storage.markChapterAsRead;
+storage.markChapterAsRead = (mangaId, chapterId) => {
+    originalMarkChapterAsRead(mangaId, chapterId);
     if (auth.currentUser) syncStorage.pushToCloud();
 };
