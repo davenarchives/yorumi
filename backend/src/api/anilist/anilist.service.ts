@@ -197,7 +197,7 @@ export const anilistService = {
                         lastPage
                         hasNextPage
                     }
-                    media(type: ANIME, sort: TRENDING_DESC) {
+                    media(type: ANIME, sort: TRENDING_DESC, isAdult: false) {
                         ${MEDIA_FIELDS}
                     }
                 }
@@ -239,7 +239,7 @@ export const anilistService = {
                         lastPage
                         hasNextPage
                     }
-                    media(type: ANIME, season: $season, seasonYear: $seasonYear, sort: POPULARITY_DESC) {
+                    media(type: ANIME, season: $season, seasonYear: $seasonYear, sort: POPULARITY_DESC, isAdult: false) {
                         ${MEDIA_FIELDS}
                     }
                 }
@@ -271,7 +271,7 @@ export const anilistService = {
                         lastPage
                         hasNextPage
                     }
-                    media(type: ANIME, sort: POPULARITY_DESC) {
+                    media(type: ANIME, sort: POPULARITY_DESC, isAdult: false) {
                         ${MEDIA_FIELDS}
                     }
                 }
@@ -303,7 +303,7 @@ export const anilistService = {
                         lastPage
                         hasNextPage
                     }
-                    media(type: MANGA, sort: SCORE_DESC) {
+                    media(type: MANGA, sort: SCORE_DESC, isAdult: false) {
                         ${MEDIA_FIELDS}
                     }
                 }
@@ -335,7 +335,7 @@ export const anilistService = {
                         lastPage
                         hasNextPage
                     }
-                    media(type: MANGA, sort: POPULARITY_DESC) {
+                    media(type: MANGA, sort: POPULARITY_DESC, isAdult: false) {
                         ${MEDIA_FIELDS}
                     }
                 }
@@ -367,7 +367,7 @@ export const anilistService = {
                         lastPage
                         hasNextPage
                     }
-                    media(type: MANGA, sort: TRENDING_DESC) {
+                    media(type: MANGA, sort: TRENDING_DESC, isAdult: false) {
                         ${MEDIA_FIELDS}
                     }
                 }
@@ -399,7 +399,7 @@ export const anilistService = {
                         lastPage
                         hasNextPage
                     }
-                    media(type: MANGA, countryOfOrigin: "KR", sort: POPULARITY_DESC) {
+                    media(type: MANGA, countryOfOrigin: "KR", sort: POPULARITY_DESC, isAdult: false) {
                         ${MEDIA_FIELDS}
                     }
                 }
@@ -515,7 +515,7 @@ export const anilistService = {
                         lastPage
                         hasNextPage
                     }
-                    media(search: $search, type: MANGA, sort: SEARCH_MATCH) {
+                    media(search: $search, type: MANGA, sort: SEARCH_MATCH, isAdult: false) {
                         ${MEDIA_FIELDS}
                     }
                 }
@@ -548,6 +548,7 @@ export const anilistService = {
                                 title { romaji english }
                                 coverImage { large }
                                 format
+                                isAdult
                             }
                         }
                     }
@@ -557,6 +558,7 @@ export const anilistService = {
                                 id
                                 title { romaji english }
                                 coverImage { large }
+                                isAdult
                             }
                         }
                     }
@@ -591,7 +593,17 @@ export const anilistService = {
                 variables: { id }
             });
 
-            return response.data.data.Media;
+            const media = response.data.data.Media;
+            if (media && media.recommendations && media.recommendations.nodes) {
+                media.recommendations.nodes = media.recommendations.nodes.filter((node: any) => !node.mediaRecommendation?.isAdult);
+            }
+            if (media && media.recommendations && media.recommendations.nodes) {
+                media.recommendations.nodes = media.recommendations.nodes.filter((node: any) => !node.mediaRecommendation?.isAdult);
+            }
+            if (media && media.relations && media.relations.edges) {
+                media.relations.edges = media.relations.edges.filter((edge: any) => !edge.node?.isAdult);
+            }
+            return media;
         } catch (error) {
             console.error('Error fetching anime by ID:', error);
             return null;
@@ -613,6 +625,7 @@ export const anilistService = {
                                 coverImage { large }
                                 format
                                 type
+                                isAdult
                             }
                         }
                     }
@@ -623,6 +636,7 @@ export const anilistService = {
                                 title { romaji english }
                                 coverImage { large }
                                 type
+                                isAdult
                             }
                         }
                     }
@@ -646,7 +660,14 @@ export const anilistService = {
                 variables: { id }
             });
 
-            return response.data.data.Media;
+            const media = response.data.data.Media;
+            if (media && media.recommendations && media.recommendations.nodes) {
+                media.recommendations.nodes = media.recommendations.nodes.filter((node: any) => !node.mediaRecommendation?.isAdult);
+            }
+            if (media && media.relations && media.relations.edges) {
+                media.relations.edges = media.relations.edges.filter((edge: any) => !edge.node?.isAdult);
+            }
+            return media;
         } catch (error) {
             console.error('Error fetching manga by ID:', error);
             return null;
@@ -758,7 +779,7 @@ export const anilistService = {
                         lastPage
                         hasNextPage
                     }
-                    media(type: MANGA, genre: $genre, sort: POPULARITY_DESC) {
+                    media(type: MANGA, genre: $genre, sort: POPULARITY_DESC, isAdult: false) {
                         ${MEDIA_FIELDS}
                     }
                 }

@@ -84,6 +84,18 @@ export async function searchManga(query: string): Promise<MangaSearchResult[]> {
             const url = linkEl.attr('href') || '';
             const thumbnail = $el.find('div.cover img').attr('src') || '';
 
+            // Try to extract genres if available (often in .genres or .meta)
+            const genres: string[] = [];
+            $el.find('.genres a').each((_, g) => genres.push($(g).text().toLowerCase()));
+
+            // NSFW Filter
+            const isNsfw = ['hentai', 'adult', 'smut'].some(term =>
+                title.toLowerCase().includes(term) ||
+                genres.some(g => g.includes(term))
+            );
+
+            if (isNsfw) return; // Skip NSFW items
+
             // Extract latest chapter
             // Usually found in .chapter class inside text div
             const chapters = $el.find('div.text .chapter a');
@@ -94,9 +106,6 @@ export async function searchManga(query: string): Promise<MangaSearchResult[]> {
 
             // Extract ID from URL (e.g., /manga/one-piece.12345 -> one-piece.12345)
             const id = url.replace(`${BASE_URL}/manga/`, '').replace(/\/$/, '');
-
-            // Try to find author or status (often in .meta or similar, but for now we might leave empty if not visible)
-            // MangaKatana list view is very minimal. We initialize empty for now.
 
             if (title && url) {
                 results.push({
@@ -116,23 +125,34 @@ export async function searchManga(query: string): Promise<MangaSearchResult[]> {
         if (results.length === 0) {
             const detailTitle = $('.info .heading').text().trim();
             if (detailTitle) {
-                // We are on a detail page
-                // The URL in axiosInstance might be the original search URL, 
-                // so we need to rely on the fact we are on a detail page.
-                // However, axios response object has `request.res.responseUrl` which is the final URL
-                const finalUrl = response.request.res.responseUrl;
+                // NSFW Check (for redirected detail page)
+                const genres: string[] = [];
+                $('.genres a').each((_, g) => genres.push($(g).text().toLowerCase()));
 
-                if (finalUrl && finalUrl.includes('/manga/')) {
-                    const id = finalUrl.split('/manga/')[1].replace(/\/$/, '');
-                    const thumbnail = $('div.media div.cover img').attr('src') || '';
+                const isNsfw = ['hentai', 'adult', 'smut'].some(term =>
+                    detailTitle.toLowerCase().includes(term) ||
+                    genres.some(g => g.includes(term))
+                );
 
-                    results.push({
-                        id,
-                        title: detailTitle,
-                        url: finalUrl,
-                        thumbnail,
-                        source: 'mangakatana'
-                    });
+                if (!isNsfw) {
+                    // We are on a detail page
+                    // The URL in axiosInstance might be the original search URL, 
+                    // so we need to rely on the fact we are on a detail page.
+                    // However, axios response object has `request.res.responseUrl` which is the final URL
+                    const finalUrl = response.request.res.responseUrl;
+
+                    if (finalUrl && finalUrl.includes('/manga/')) {
+                        const id = finalUrl.split('/manga/')[1].replace(/\/$/, '');
+                        const thumbnail = $('div.media div.cover img').attr('src') || '';
+
+                        results.push({
+                            id,
+                            title: detailTitle,
+                            url: finalUrl,
+                            thumbnail,
+                            source: 'mangakatana'
+                        });
+                    }
                 }
             }
         }
@@ -429,6 +449,11 @@ export async function getHotUpdates(): Promise<HotUpdate[]> {
             const titleEl = $el.find('.title a');
             const title = titleEl.text().trim();
             const url = titleEl.attr('href') || '';
+
+            // NSFW Filter (Hot Updates - Title only as genres aren't always visible)
+            if (['hentai', 'adult', 'smut'].some(term => title.toLowerCase().includes(term))) {
+                return;
+            }
 
             // Latest Chapter
             const chapterEl = $el.find('.chapter a');
