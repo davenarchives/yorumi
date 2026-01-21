@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Anime, Episode } from '../../types/anime';
-import AnimeCard from '../AnimeCard';
+import AnimeCard from '../../features/anime/components/AnimeCard';
 
 // Episode Grid Component with Pagination (30 per page)
 // Episode List Component with Pagination (20 per page)

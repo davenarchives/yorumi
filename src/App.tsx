@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
-import Navbar from './components/Navbar';
+import Navbar from './components/layout/Navbar';
 import HomePage from './pages/HomePage';
 import AnimeDetailsPage from './pages/AnimeDetailsPage';
 import MangaDetailsPage from './pages/MangaDetailsPage';

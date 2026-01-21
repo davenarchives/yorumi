@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { LayoutGrid, List } from 'lucide-react';
 import type { Anime, Episode } from '../../types/anime';
 import type { StreamLink } from '../../types/stream';
-import Navbar from '../Navbar';
+import Navbar from '../layout/Navbar';
 
 interface WatchModalProps {
     isOpen: boolean;
