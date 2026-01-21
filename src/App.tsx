@@ -5,6 +5,7 @@ import HomePage from './pages/HomePage';
 import AnimeDetailsPage from './pages/AnimeDetailsPage';
 import MangaDetailsPage from './pages/MangaDetailsPage';
 import WatchPage from './pages/WatchPage';
+import MangaReaderPage from './pages/MangaReaderPage';
 import SearchPage from './pages/SearchPage';
 import MangaPage from './pages/MangaPage';
 import GenrePage from './pages/GenrePage';
@@ -65,7 +66,7 @@ function App() {
             date: item.aired?.string ? new Date(item.aired.string).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : item.year,
             type: item.type, // e.g., TV
             duration: item.duration,
-            url: `/anime/${item.id}`
+            url: `/anime/details/${item.id}`
           })));
         } else {
           const { data } = await mangaService.searchManga(debouncedSearchTerm, 1);
@@ -77,7 +78,7 @@ function App() {
             date: item.published?.string ? new Date(item.published.string).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '',
             type: item.type, // e.g., MANGA
             duration: null, // Manga doesn't have duration
-            url: `/manga/${item.id}`
+            url: `/manga/details/${item.id}`
           })));
         }
       } catch (error) {
@@ -169,11 +170,12 @@ function App() {
 
       <Routes>
         <Route path="/" element={<HomePage />} />
-        <Route path="/anime/:id" element={<AnimeDetailsPage />} />
-        <Route path="/watch/:id" element={<WatchPage />} />
+        <Route path="/anime/details/:id" element={<AnimeDetailsPage />} />
+        <Route path="/anime/watch/:title/:id" element={<WatchPage />} />
         <Route path="/search" element={<SearchPage />} />
         <Route path="/manga" element={<MangaPage />} />
-        <Route path="/manga/:id" element={<MangaDetailsPage />} />
+        <Route path="/manga/details/:id" element={<MangaDetailsPage />} />
+        <Route path="/manga/read/:title/:id/:chapter" element={<MangaReaderPage />} />
         <Route path="/genre/:name" element={<GenrePage />} />
         <Route path="/manga/genre/:name" element={<MangaGenrePage />} />
         <Route path="/profile" element={<ProfilePage />} />
