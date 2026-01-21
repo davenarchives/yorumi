@@ -4,6 +4,7 @@ import { ArrowLeft } from 'lucide-react';
 import AnimeCard from '../features/anime/components/AnimeCard';
 import Pagination from '../components/ui/Pagination';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
+import { slugify } from '../utils/slugify';
 import type { Anime } from '../types/anime';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
@@ -68,11 +69,12 @@ export default function GenrePage() {
     }, [genreName, currentPage]);
 
     const handleAnimeClick = (item: Anime) => {
-        navigate(`/anime/${item.mal_id}`, { state: { anime: item } });
+        navigate(`/anime/details/${item.mal_id}`, { state: { anime: item } });
     };
 
     const handleWatchClick = (item: Anime) => {
-        navigate(`/watch/${item.mal_id}`, { state: { anime: item } });
+        const title = slugify(item.title || item.title_english || 'anime');
+        navigate(`/anime/watch/${title}/${item.mal_id}`, { state: { anime: item } });
     };
 
     return (
