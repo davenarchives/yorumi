@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { mangaService } from '../services/mangaService';
-import type { Manga } from '../types/manga';
+import { mangaService } from '../../../services/mangaService';
+import type { Manga } from '../../../types/manga';
 
 interface Top100MangaProps {
     onMangaClick: (mangaId: string) => void;

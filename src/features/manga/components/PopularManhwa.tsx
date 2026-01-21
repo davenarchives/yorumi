@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import useEmblaCarousel from 'embla-carousel-react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { mangaService } from '../services/mangaService';
-import type { Manga } from '../types/manga';
+import { mangaService } from '../../../services/mangaService';
+import type { Manga } from '../../../types/manga';
 
 interface PopularManhwaProps {
     onMangaClick: (mangaId: string) => void;

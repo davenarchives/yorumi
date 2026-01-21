@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { mangaService } from '../services/mangaService';
+import { mangaService } from '../../../services/mangaService';
 
 interface HotUpdate {
     id: string;

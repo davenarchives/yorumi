@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Manga } from '../types/manga';
+import type { Manga } from '../../../types/manga';
 
 interface MangaCardProps {
     manga: Manga;
