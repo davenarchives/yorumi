@@ -64,14 +64,14 @@ export default function Pagination({ currentPage, lastPage, onPageChange, isLoad
     };
 
     return (
-        <div className="flex justify-center items-center gap-2 mt-12 pb-8 select-none">
-            {/* First Page */}
+        <div className="flex justify-center items-center gap-1 sm:gap-2 mt-8 sm:mt-12 pb-4 sm:pb-8 select-none">
+            {/* First Page - Hide on mobile */}
             <button
                 onClick={() => handlePageChange(1)}
                 onMouseEnter={() => handleMouseEnter(1)}
                 onMouseLeave={handleMouseLeave}
                 disabled={currentPage === 1 || isLoading}
-                className="w-10 h-10 flex items-center justify-center rounded-full bg-[#2a2a3e] hover:bg-[#3a3a4e] disabled:opacity-30 disabled:cursor-not-allowed text-gray-300 transition-colors font-bold"
+                className="hidden sm:flex w-8 h-8 sm:w-10 sm:h-10 items-center justify-center rounded-full bg-[#2a2a3e] hover:bg-[#3a3a4e] disabled:opacity-30 disabled:cursor-not-allowed text-gray-300 transition-colors font-bold text-xs sm:text-sm"
                 title="First Page"
             >
                 «
@@ -83,7 +83,7 @@ export default function Pagination({ currentPage, lastPage, onPageChange, isLoad
                 onMouseEnter={() => handleMouseEnter(currentPage - 1)}
                 onMouseLeave={handleMouseLeave}
                 disabled={currentPage === 1 || isLoading}
-                className="w-10 h-10 flex items-center justify-center rounded-full bg-[#2a2a3e] hover:bg-[#3a3a4e] disabled:opacity-30 disabled:cursor-not-allowed text-gray-300 transition-colors font-bold"
+                className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-[#2a2a3e] hover:bg-[#3a3a4e] disabled:opacity-30 disabled:cursor-not-allowed text-gray-300 transition-colors font-bold text-xs sm:text-sm"
                 title="Previous Page"
             >
                 ‹
@@ -97,9 +97,11 @@ export default function Pagination({ currentPage, lastPage, onPageChange, isLoad
                     onMouseEnter={() => handleMouseEnter(page)}
                     onMouseLeave={handleMouseLeave}
                     disabled={isLoading}
-                    className={`w-10 h-10 flex items-center justify-center rounded-full text-sm font-bold transition-all ${currentPage === page
-                        ? 'bg-[#ffbade] text-black shadow-lg shadow-[#ffbade]/20 scan-effect' // Active: Pink
-                        : 'bg-[#2a2a3e] text-gray-300 hover:bg-[#3a3a4e]'
+                    className={`w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full text-xs sm:text-sm font-bold transition-all 
+                        ${Math.abs(currentPage - page) > 1 ? 'hidden sm:flex' : 'flex'}
+                        ${currentPage === page
+                            ? 'bg-[#ffbade] text-black shadow-lg shadow-[#ffbade]/20 scan-effect' // Active: Pink
+                            : 'bg-[#2a2a3e] text-gray-300 hover:bg-[#3a3a4e]'
                         }`}
                 >
                     {page}
@@ -112,19 +114,19 @@ export default function Pagination({ currentPage, lastPage, onPageChange, isLoad
                 onMouseEnter={() => handleMouseEnter(currentPage + 1)}
                 onMouseLeave={handleMouseLeave}
                 disabled={currentPage === lastPage || isLoading}
-                className="w-10 h-10 flex items-center justify-center rounded-full bg-[#2a2a3e] hover:bg-[#3a3a4e] disabled:opacity-30 disabled:cursor-not-allowed text-gray-300 transition-colors font-bold"
+                className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-[#2a2a3e] hover:bg-[#3a3a4e] disabled:opacity-30 disabled:cursor-not-allowed text-gray-300 transition-colors font-bold text-xs sm:text-sm"
                 title="Next Page"
             >
                 ›
             </button>
 
-            {/* Last Page */}
+            {/* Last Page - Hide on mobile */}
             <button
                 onClick={() => handlePageChange(lastPage)}
                 onMouseEnter={() => handleMouseEnter(lastPage)}
                 onMouseLeave={handleMouseLeave}
                 disabled={currentPage === lastPage || isLoading}
-                className="w-10 h-10 flex items-center justify-center rounded-full bg-[#2a2a3e] hover:bg-[#3a3a4e] disabled:opacity-30 disabled:cursor-not-allowed text-gray-300 transition-colors font-bold"
+                className="hidden sm:flex w-8 h-8 sm:w-10 sm:h-10 items-center justify-center rounded-full bg-[#2a2a3e] hover:bg-[#3a3a4e] disabled:opacity-30 disabled:cursor-not-allowed text-gray-300 transition-colors font-bold text-xs sm:text-sm"
                 title="Last Page"
             >
                 »
