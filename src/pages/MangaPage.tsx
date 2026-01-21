@@ -21,11 +21,11 @@ export default function MangaPage() {
 
 
     const handleSpotlightClick = (mangaId: string) => {
-        navigate(`/manga/${mangaId}`);
+        navigate(`/manga/details/${mangaId}`);
     };
 
     const handleMangaClick = (item: Manga) => {
-        navigate(`/manga/${item.id || item.mal_id}`);
+        navigate(`/manga/details/${item.id || item.mal_id}`);
     };
 
     // Get the title for View All based on viewMode
