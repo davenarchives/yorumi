@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import MangaCard from '../components/MangaCard';
-import Pagination from '../components/Pagination';
-import LoadingSpinner from '../components/LoadingSpinner';
+import MangaCard from '../features/manga/components/MangaCard';
+import Pagination from '../components/ui/Pagination';
+import LoadingSpinner from '../components/ui/LoadingSpinner';
 import type { Manga } from '../types/manga';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';

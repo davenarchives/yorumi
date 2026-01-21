@@ -1,14 +1,16 @@
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import LoadingSpinner from '../components/LoadingSpinner';
-import MangaSpotlight from '../components/MangaSpotlight';
-import PopularManhwa from '../components/PopularManhwa';
-import AllTimePopularManga from '../components/AllTimePopularManga';
-import Top100Manga from '../components/Top100Manga';
-import LatestMangaUpdates from '../components/LatestMangaUpdates';
-import Genres from '../components/Genres';
-import MangaCard from '../components/MangaCard';
-import Pagination from '../components/Pagination';
+import LoadingSpinner from '../components/ui/LoadingSpinner';
+import Pagination from '../components/ui/Pagination';
+
+// Feature Components
+import MangaSpotlight from '../features/manga/components/MangaSpotlight';
+import PopularManhwa from '../features/manga/components/PopularManhwa';
+import AllTimePopularManga from '../features/manga/components/AllTimePopularManga';
+import Top100Manga from '../features/manga/components/Top100Manga';
+import LatestMangaUpdates from '../features/manga/components/LatestMangaUpdates';
+import MangaCard from '../features/manga/components/MangaCard';
+import Genres from '../features/anime/components/Genres';
 import { useManga } from '../hooks/useManga';
 import type { Manga } from '../types/manga';
 

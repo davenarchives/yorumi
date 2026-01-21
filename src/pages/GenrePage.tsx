@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import AnimeCard from '../components/AnimeCard';
-import Pagination from '../components/Pagination';
-import LoadingSpinner from '../components/LoadingSpinner';
+import AnimeCard from '../features/anime/components/AnimeCard';
+import Pagination from '../components/ui/Pagination';
+import LoadingSpinner from '../components/ui/LoadingSpinner';
 import type { Anime } from '../types/anime';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';

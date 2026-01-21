@@ -3,9 +3,9 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Check, Plus } from 'lucide-react';
 import { useManga } from '../hooks/useManga';
 import { useReadList } from '../hooks/useReadList';
-import LoadingSpinner from '../components/LoadingSpinner';
-import MangaCard from '../components/MangaCard';
-import MangaReaderModal from '../components/modals/MangaReaderModal';
+import LoadingSpinner from '../components/ui/LoadingSpinner';
+import MangaCard from '../features/manga/components/MangaCard';
+import MangaReaderModal from '../features/manga/components/MangaReaderModal';
 import type { MangaChapter } from '../types/manga';
 
 // Chapter Grid for Details Page

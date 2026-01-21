@@ -121,8 +121,8 @@ const TabButton = ({ active, onClick, icon, label }: { active: boolean; onClick:
 
 // Add component import
 import AvatarSelectionModal from '../components/modals/AvatarSelectionModal';
-import AnimeCard from '../components/AnimeCard';
-import MangaCard from '../components/MangaCard';
+import AnimeCard from '../features/anime/components/AnimeCard';
+import MangaCard from '../features/manga/components/MangaCard';
 
 const ProfileTab = ({ user, avatar }: { user: any, avatar: string | null }) => {
     const { updateName, updateAvatar } = useAuth();

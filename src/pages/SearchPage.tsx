@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useSearch } from '../hooks/useSearch';
-import AnimeCard from '../components/AnimeCard';
-import MangaCard from '../components/MangaCard';
-import LoadingSpinner from '../components/LoadingSpinner';
+import AnimeCard from '../features/anime/components/AnimeCard';
+import MangaCard from '../features/manga/components/MangaCard';
+import LoadingSpinner from '../components/ui/LoadingSpinner';
 import type { Anime } from '../types/anime';
 import type { Manga } from '../types/manga';
 
