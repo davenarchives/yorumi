@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAnime } from '../hooks/useAnime';
 import { useWatchList } from '../hooks/useWatchList';
+import { slugify } from '../utils/slugify';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import type { Anime } from '../types/anime';
 
@@ -107,7 +108,10 @@ export default function AnimeDetailsPage() {
                     anime={selectedAnime}
                     episodesCount={episodes.length}
                     inList={inList}
-                    onWatch={() => navigate(`/watch/${id}`)}
+                    onWatch={() => {
+                        const title = slugify(selectedAnime.title || selectedAnime.title_english || 'anime');
+                        navigate(`/anime/watch/${title}/${id}`);
+                    }}
                     onToggleList={handleToggleList}
                 >
                     {/* Tabs */}
@@ -148,7 +152,10 @@ export default function AnimeDetailsPage() {
                                     <DetailsEpisodeGrid
                                         episodes={episodes}
                                         watchedEpisodes={watchedEpisodes}
-                                        onEpisodeClick={(ep) => navigate(`/watch/${id}?ep=${ep.episodeNumber}`)}
+                                        onEpisodeClick={(ep) => {
+                                            const title = slugify(selectedAnime.title || selectedAnime.title_english || 'anime');
+                                            navigate(`/anime/watch/${title}/${id}?ep=${ep.episodeNumber}`);
+                                        }}
                                     />
                                 )
                             )}
@@ -183,7 +190,7 @@ export default function AnimeDetailsPage() {
                         <div className="mt-6">
                             <DetailsRelations
                                 relations={selectedAnime.relations}
-                                onAnimeClick={(id) => navigate(`/anime/${id}`)}
+                                onAnimeClick={(id) => navigate(`/anime/details/${id}`)}
                             />
                         </div>
                     )}
