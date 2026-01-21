@@ -3,9 +3,9 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Check, Plus } from 'lucide-react';
 import { useManga } from '../hooks/useManga';
 import { useReadList } from '../hooks/useReadList';
+import { slugify } from '../utils/slugify';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import MangaCard from '../features/manga/components/MangaCard';
-import MangaReaderModal from '../features/manga/components/MangaReaderModal';
 import type { MangaChapter } from '../types/manga';
 
 // Chapter Grid for Details Page
@@ -144,6 +144,15 @@ export default function MangaDetailsPage() {
         }
     };
 
+    // Navigate to reader page with path-based URL
+    const handleChapterClick = (chapter: MangaChapter) => {
+        if (!selectedManga) return;
+        const title = slugify(selectedManga.title || 'manga');
+        const chapterMatch = chapter.title.match(/Chapter\s+(\d+)/i);
+        const chapterNum = chapterMatch ? chapterMatch[1] : '1';
+        navigate(`/manga/read/${title}/${id}/c${chapterNum}`);
+    };
+
     if (mangaLoading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-[#0a0a0a]">
@@ -253,7 +262,7 @@ export default function MangaDetailsPage() {
                                     // Start reading first chapter (last in array since MK returns newest-first)
                                     if (mangaChapters.length > 0) {
                                         const firstChapter = mangaChapters[mangaChapters.length - 1];
-                                        loadMangaChapter(firstChapter);
+                                        handleChapterClick(firstChapter);
                                     }
                                 }}
                                 disabled={mangaChaptersLoading}
@@ -357,7 +366,7 @@ export default function MangaDetailsPage() {
                                         <ChapterList
                                             chapters={mangaChapters}
                                             readChapters={readChapters}
-                                            onChapterClick={loadMangaChapter}
+                                            onChapterClick={handleChapterClick}
                                         />
                                     ) : (
                                         <div className="text-gray-500 text-center py-4">
@@ -406,7 +415,7 @@ export default function MangaDetailsPage() {
                                             volumes: 0,
                                             score: 0
                                         }}
-                                        onClick={() => navigate(`/manga/${edge.node.id}`)}
+                                        onClick={() => navigate(`/manga/details/${edge.node.id}`)}
                                     />
                                 )) || <div className="text-gray-500">No relations found.</div>}
                             </div>
@@ -414,26 +423,6 @@ export default function MangaDetailsPage() {
                     </div>
                 </div>
             </div>
-
-            {/* Reader Modal */}
-            <MangaReaderModal
-                isOpen={!!currentMangaChapter}
-                onClose={closeMangaReader}
-                manga={selectedManga}
-                chapters={mangaChapters}
-                currentChapter={currentMangaChapter}
-                pages={chapterPages}
-                chapterSearchQuery={chapterSearchQuery}
-                chaptersLoading={mangaChaptersLoading}
-                pagesLoading={mangaPagesLoading}
-                zoomLevel={zoomLevel}
-                onChapterSearchChange={setChapterSearchQuery}
-                onLoadChapter={loadMangaChapter}
-                onPrefetchChapter={prefetchChapter}
-                onZoomIn={zoomIn}
-                onZoomOut={zoomOut}
-                readChapters={readChapters}
-            />
         </div>
     );
 }
