@@ -84,20 +84,10 @@ export default function MangaDetailsPage() {
     const {
         selectedManga,
         mangaChapters,
-        currentMangaChapter,
-        chapterPages,
         mangaChaptersLoading,
-        mangaPagesLoading,
-        chapterSearchQuery,
-        zoomLevel,
         mangaLoading, // This tracks the details fetching
-        setChapterSearchQuery,
         fetchMangaDetails,
         loadMangaChapter,
-        prefetchChapter,
-        closeMangaReader,
-        zoomIn,
-        zoomOut,
         readChapters
     } = useManga();
 
