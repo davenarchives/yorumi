@@ -7,7 +7,7 @@ export interface MangaSearchResult extends mangakatana.MangaSearchResult {
 
 // In-memory search cache (5 minute TTL)
 const searchCache = new Map<string, { data: any[], timestamp: number }>();
-const SEARCH_CACHE_TTL = 0; // Disabled for debugging
+const SEARCH_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 /**
  * Search manga (MangaKatana only) with caching
@@ -130,6 +130,10 @@ let hotUpdatesCache: any[] | null = null;
 let hotUpdatesCacheTime = 0;
 const CACHE_DURATION = 15 * 60 * 1000; // 15 minutes
 
+// Spotlight cache (same TTL as hot updates)
+let spotlightCache: any[] | null = null;
+let spotlightCacheTime = 0;
+
 export async function getHotUpdates() {
     const now = Date.now();
     if (hotUpdatesCache && (now - hotUpdatesCacheTime < CACHE_DURATION)) {
@@ -160,6 +164,13 @@ export async function getHotUpdates() {
  * Get Spotlight with enriched chapter info
  */
 export async function getEnrichedSpotlight() {
+    // Check cache first
+    const now = Date.now();
+    if (spotlightCache && (now - spotlightCacheTime < CACHE_DURATION)) {
+        console.log('Serving Spotlight from cache');
+        return spotlightCache;
+    }
+
     try {
         // 1. Get Base Trending from AniList
         let topManga: any[] = [];
@@ -227,6 +238,13 @@ export async function getEnrichedSpotlight() {
             }
             return item;
         }));
+
+        // Cache the results
+        if (enriched.length > 0) {
+            spotlightCache = enriched;
+            spotlightCacheTime = Date.now();
+            console.log(`Cached ${enriched.length} spotlight items`);
+        }
 
         return enriched;
     } catch (error) {
