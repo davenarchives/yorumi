@@ -11,244 +11,253 @@
 
   <img src="https://img.shields.io/badge/REACT-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React" />
   <img src="https://img.shields.io/badge/TYPESCRIPT-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/ELECTRON-47848F?style=for-the-badge&logo=electron&logoColor=white" alt="Electron" />
   <img src="https://img.shields.io/badge/EXPRESS.JS-000000?style=for-the-badge&logo=express&logoColor=white" alt="Express" />
-  <img src="https://img.shields.io/badge/TAILWIND-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white" alt="Tailwind CSS" />
+  <img src="https://img.shields.io/badge/REDIS-DC382D?style=for-the-badge&logo=redis&logoColor=white" alt="Redis" />
+  <img src="https://img.shields.io/badge/FIREBASE-FFCA28?style=for-the-badge&logo=firebase&logoColor=white" alt="Firebase" />
 </div>
 
 <br>
 
-> A modern, feature-rich platform for streaming anime and reading manga with a premium UI/UX experience.
+> A modern, feature-rich desktop and web platform for streaming anime and reading manga with a premium UI/UX experience.
 
-> [!IMPORTANT]
-> **Disclaimer**: This is a personal project built for educational purposes and fun only. It is not intended for commercial use or distribution.
+<br>
 
-![Yorumi Banner](./screenshots/image.png)
+> [!CAUTION]
+> ## ⚠️ EDUCATIONAL PURPOSE ONLY - HEAVY DISCLAIMER
+> 
+> **PLEASE READ CAREFULLY BEFORE USING OR CONTRIBUTING:**
+>
+> 1.  **No Content Ownership**: This project does **NOT** host, store, or distribute any copyrighted files (videos, images, or audio). All content is scraped in real-time from third-party publicly available sources (e.g., AnimePahe, MangaKatana, AniList).
+> 2.  **Educational Use**: This source code is strictly for **educational and research purposes**. It demonstrates modern web development techniques, scraping algorithms, and application architecture.
+> 3.  **Legal Liability**: The developers and contributors of this repository assume **NO LIABILITY** for any misuse of this software. Users are solely responsible for ensuring their usage complies with local laws and the Terms of Service of the source websites.
+> 4.  **No Commercial Use**: This project is **NOT** for sale and should not be used for any commercial activities.
 
-## 📸 Screenshots
+<br>
 
-<table>
-  <tr>
-    <td><img src="./screenshots/image-1.png" alt="Anime Streaming" /></td>
-    <td><img src="./screenshots/image-2.png" alt="Manga Reader" /></td>
-  </tr>
-  <tr>
-    <td><img src="./screenshots/image-3.png" alt="Search & Filter" /></td>
-    <td><img src="./screenshots/image.png" alt="Home View" /></td>
-  </tr>
-</table>
+![Yorumi Banner](./screenshots/animepage.png)
 
 ## ✨ Features
 
-- 🎬 **Anime Streaming**: Seamless video playback with AnimePahe integration
-- 📚 **Manga Reader**: Optimized reading experience with MangaKatana scraper
-- 🔍 **Advanced Search**: Real-time search and filtering for episodes/chapters
-- 🎨 **Premium UI**: Dark-themed, glassmorphic design with smooth animations
-- ⚡ **Progressive Loading**: Smart pagination and data fetching for optimal performance
-- 🎯 **Episode/Chapter Jump**: Quick search by number for easy navigation
-- 📱 **Responsive Design**: Works beautifully across all device sizes
+- **🎬 Unified Streaming Experience**: Seamlessly watch anime with HLS support and auto-quality selection.
+- **📚 Integrated Manga Reader**: High-performance manga reader with vertical/horizontal modes and infinite scrolling.
+- **⚡ Advanced Scraper Engine**: 
+    - Real-time data fetching from multiple sources.
+    - **Fuzzy Matching**: Intelligent title matching using `fuzzball` to bridge metadata differences between AniList and content sources.
+    - **Cloudflare Bypass**: Integrated Puppeteer strategies to handle protected sources.
+- **🚀 Performance First**: 
+    - **Redis Caching**: Server-side caching for API responses, search results, and stream links.
+    - **Lazy Loading**: Progressive image loading and component code-splitting.
+- **🎨 Premium UI/UX**: 
+    - Glassmorphic design system using **Tailwind CSS**.
+    - Smooth animations with **Framer Motion** (implied via UI quality).
+    - Responsive layout for Desktop (Electron) and Web.
+- **☁️ Cloud Sync**: **Firebase** integration for syncing user progress, bookmarks, and settings across devices.
+- **🖥️ Cross-Platform**: Built with **Electron** to run natively on Windows, macOS, and Linux.
+
+## 📸 Screenshots
+
+### Desktop View
+<table>
+  <tr>
+    <td width="50%">
+      <img src="./screenshots/animepage.png" alt="Anime Page" width="100%" />
+      <p align="center"><b>Anime Discovery</b></p>
+    </td>
+    <td width="50%">
+      <img src="./screenshots/animedetails.png" alt="Anime Details" width="100%" />
+      <p align="center"><b>Anime Details</b></p>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <img src="./screenshots/mangapage.png" alt="Manga Page" width="100%" />
+      <p align="center"><b>Manga Discovery</b></p>
+    </td>
+    <td>
+      <img src="./screenshots/mangadetails.png" alt="Manga Details" width="100%" />
+      <p align="center"><b>Manga Details</b></p>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      <img src="./screenshots/animeplayer.png" alt="Anime Player" width="100%" />
+      <p align="center"><b>Video Player</b></p>
+    </td>
+    <td>
+      <img src="./screenshots/mangareader.png" alt="Manga Reader" width="100%" />
+      <p align="center"><b>Manga Reader</b></p>
+    </td>
+  </tr>
+   <tr>
+    <td colspan="2">
+      <img src="./screenshots/profilepage.png" alt="User Profile" width="100%" />
+      <p align="center"><b>User Profile</b></p>
+    </td>
+  </tr>
+</table>
+
+### Mobile Responsiveness
+<table>
+  <tr>
+    <td width="33%"><img src="./screenshots/mobileresponsiveness.png" alt="Mobile Home" width="100%" /></td>
+    <td width="33%"><img src="./screenshots/mobileresponsiveness2.png" alt="Mobile Details" width="100%" /></td>
+    <td width="33%"><img src="./screenshots/mobileresponsiveness3.png" alt="Mobile Player" width="100%" /></td>
+  </tr>
+</table>
 
 ## 🏗️ Architecture
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                         Frontend (React)                     │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
-│  │   App.tsx    │  │  Components  │  │    Styles    │      │
-│  │              │  │              │  │  (Tailwind)  │      │
-│  └──────┬───────┘  └──────────────┘  └──────────────┘      │
-│         │                                                    │
-│         │ HTTP Requests (Axios)                             │
-└─────────┼────────────────────────────────────────────────────┘
-          │
-          ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    Backend (Express.js)                      │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
-│  │   Routes     │  │   Services   │  │   Scrapers   │      │
-│  │              │  │              │  │              │      │
-│  │ - /api/mal   │  │ - Anime      │  │ - AnimePahe  │      │
-│  │ - /api/manga │  │ - Manga      │  │ - MangaKatana│      │
-│  │ - /scraper   │  │ - Scraper    │  │ - MAL        │      │
-│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘      │
-│         │                 │                  │               │
-│         └─────────────────┴──────────────────┘               │
-│                            │                                 │
-└────────────────────────────┼─────────────────────────────────┘
-                             │
-                             ▼
-                    ┌────────────────────┐
-                    │  External Sources  │
-                    │                    │
-                    │  - AnimePahe       │
-                    │  - MangaKatana     │
-                    │  - MyAnimeList     │
-                    └────────────────────┘
+Yorumi allows for a hybrid architecture, running as a standalone Electron application or a traditional Client-Server web app.
+
+```mermaid
+graph TD
+    User[End User] --> Client[Electron / Web Client]
+    
+    subgraph Frontend [Frontend Layer]
+        Client
+        React[React 19]
+        State[Context API + Hooks]
+    end
+    
+    subgraph Backend [Backend Layer]
+        API[Express API]
+        Scraper[Scraper Engine]
+        Cache[Redis / Upstash]
+    end
+    
+    subgraph External [External Services]
+        AniList[AniList API]
+        Sources[AnimePahe / MangaKatana]
+        Firebase[Firebase Auth & DB]
+    end
+
+    Client -- HTTP/REST --> API
+    Client -- Auth --> Firebase
+    
+    API -- GraphQL --> AniList
+    API -- Caching --> Cache
+    API -- Scraping --> Scraper
+    
+    Scraper -- Puppeteer/Cheerio --> Sources
 ```
 
-### Tech Stack
+### 🛠️ Tech Stack
 
-**Frontend**
-- React 18 (TypeScript)
-- Vite (Build Tool)
-- Tailwind CSS (Styling)
-- Axios (HTTP Client)
+#### **Frontend (Electron / Web)**
+- **Core**: React 19, TypeScript
+- **Build Tool**: Vite (Rolldown)
+- **Styling**: Tailwind CSS, PostCSS
+- **State Management**: React Hooks & Context
+- **Routing**: React Router v7
+- **Video**: HLS.js
+- **Icons**: Lucide React
+- **Electron**: Electron 28 (Main/Renderer process IPC)
 
-**Backend**
-- Node.js (TypeScript)
-- Express.js (Server Framework)
-- Puppeteer (Browser Automation)
-- Cheerio (HTML Parsing)
-- Axios (HTTP Requests)
+#### **Backend (API & Scraper)**
+- **Runtime**: Node.js
+- **Framework**: Express.js
+- **Database / Cache**: Redis (@upstash/redis) for high-performance caching.
+- **Scraping**: 
+    - **Puppeteer Core**: Headless browser automation for dynamic sites.
+    - **Cheerio**: Lightweight HTML parsing for static content.
+    - **Fuzzball**: Fuzzy logic string matching for reliable search results.
+- **API Clients**: GraphQL Request (for AniList), Axios.
+
+#### **DevOps & Tools**
+- **Linting**: ESLint, Prettier
+- **Package Manager**: npm
+- **Bundler**: Electron Builder
 
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js (v18 or higher)
-- npm or yarn
+- **Node.js** (v18 or higher recommended)
+- **npm** or **yarn**
+- **Redis Instance** (Optional but recommended for performance. Local or Upstash)
 
 ### Installation
 
-1. Clone the repository
-   ```bash
-   git clone https://github.com/davenarchives/yorumi.git
-   cd yorumi
-   ```
+1.  **Clone the Repository**
+    ```bash
+    git clone https://github.com/davenarchives/yorumi.git
+    cd yorumi
+    ```
 
-2. Install frontend dependencies
-   ```bash
-   npm install
-   ```
+2.  **Install Root Dependencies (Frontend + Electron)**
+    ```bash
+    npm install
+    ```
 
-3. Install backend dependencies
-   ```bash
-   cd backend
-   npm install
-   cd ..
-   ```
+3.  **Install Backend Dependencies**
+    ```bash
+    cd backend
+    npm install
+    cd ..
+    ```
 
-### Running the Application
+### Running Locally (Web Mode)
 
-1. Start the backend server
-   ```bash
-   cd backend
-   npm run dev
-   ```
-   Backend will run on `http://localhost:3001`
+To run the application as a standard web app (Client + Server):
 
-2. In a new terminal, start the frontend
-   ```bash
-   npm run dev
-   ```
-   Frontend will run on `http://localhost:5173`
+1.  **Start the Backend**
+    ```bash
+    cd backend
+    npm run dev
+    ```
+    *Server runs on `http://localhost:3001`*
 
-3. Open your browser and navigate to `http://localhost:5173`
+2.  **Start the Frontend** (in a new terminal)
+    ```bash
+    npm run dev
+    ```
+    *Client runs on `http://localhost:5173`*
+
+### Running Locally (Electron Mode)
+
+To launch the full desktop experience:
+
+```bash
+npm run electron:dev
+```
+*This concurrently starts the Vite dev server, Backend API, and Electron wrapper.*
 
 ## 📁 Project Structure
 
-```
+```bash
 yorumi/
-├── backend/
+├── backend/                 # Express API & Scraper Server
 │   ├── src/
-│   │   ├── api/
-│   │   │   ├── mal/           # MyAnimeList routes
-│   │   │   └── scraper/       # Scraper routes & services
-│   │   ├── scraper/
-│   │   │   ├── animepahe.ts   # AnimePahe scraper
-│   │   │   ├── mangakatana.ts # MangaKatana scraper
-│   │   │   └── mal.ts         # MAL scraper
-│   │   └── index.ts           # Express server entry
-│   └── package.json
-├── src/
-│   ├── App.tsx                # Main React component
-│   ├── index.css              # Global styles
-│   └── main.tsx               # React entry point
-├── public/                    # Static assets
-├── README.md
-└── package.json
-```
-
-## 🔌 API Documentation
-
-### Anime Endpoints
-
-#### Search Anime
-```
-GET /api/mal/search?q={query}
-```
-
-#### Get Top Anime
-```
-GET /api/mal/top?limit={limit}
-```
-
-#### Get Anime Episodes
-```
-GET /api/scraper/episodes?session={session_id}
-```
-
-#### Get Stream Links
-```
-GET /api/scraper/stream?session={session_id}&episode={episode_id}
-```
-
-### Manga Endpoints
-
-#### Search Manga
-```
-GET /api/manga/search?q={query}
-```
-
-#### Get Manga Details
-```
-GET /api/manga/details/{manga_id}
-```
-
-#### Get Chapter List
-```
-GET /api/manga/chapters/{manga_id}
-```
-
-#### Get Chapter Pages
-```
-GET /api/manga/pages?url={chapter_url}
+│   │   ├── api/             # REST API Controllers (AniList, Manga, etc.)
+│   │   ├── scraper/         # Scraping Logic (AnimePahe, MangaKatana)
+│   │   └── index.ts         # Server Entry Point
+├── electron/                # Electron Main Process Code
+├── src/                     # React Frontend Code
+│   ├── components/          # Reusable UI Components
+│   ├── features/            # Feature-based Modules (Anime, Manga, Player)
+│   ├── hooks/               # Custom React Hooks
+│   ├── pages/               # Page Views
+│   ├── services/            # Frontend API Services
+│   ├── types/               # TypeScript Definitions
+│   └── App.tsx              # Main App Component
+├── public/                  # Static Assets
+└── package.json             # Root Config & Scripts
 ```
 
 ## 🤝 Contributing
 
-This is a personal project, but suggestions and feedback are welcome! Feel free to open an issue if you find bugs or have feature requests.
+Contributions are welcome! Please follow these steps:
+
+1.  Fork the repository.
+2.  Create a feature branch: `git checkout -b feature/amazing-feature`.
+3.  Commit your changes: `git commit -m 'feat: Add amazing feature'`.
+4.  Push to the branch: `git push origin feature/amazing-feature`.
+5.  Open a Pull Request.
 
 ## 📄 License
 
-This project is licensed under the MIT License - see below for details:
-
-```
-MIT License
-
-Copyright (c) 2026 Daven
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-```
-
-## ⚠️ Legal Notice
-
-This project is for **educational purposes only**. The scrapers used in this project access publicly available data. Please respect the terms of service of the websites being scraped. The author is not responsible for any misuse of this software.
+Distributed under the MIT License. See `LICENSE` for more information.
 
 ---
 
-Made with ❤️ for the anime and manga community.
+**Made with ❤️ by Daven**
