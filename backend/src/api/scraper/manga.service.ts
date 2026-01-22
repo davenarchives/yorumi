@@ -210,45 +210,69 @@ export async function getEnrichedSpotlight() {
             return fallbackManga;
         }
 
-        // 2. Enrich with MangaKatana Chapters in parallel
-        // We limit to top 8 to match UI
+        // 2. Enrich with MangaKatana Chapters in BACKGROUND
+        // We return the AniList data immediately so the UI doesn't block
         const limitedManga = topManga.slice(0, 8);
 
-        const enriched = await Promise.all(limitedManga.map(async (item: any) => {
-            try {
-                // Search by title
-                const title = item.title?.english || item.title?.romaji || item.title?.native;
-                if (!title) return item;
+        // Start enrichment in background (fire and forget)
+        enrichAndCache(limitedManga).catch(err => console.error('Background enrichment failed', err));
 
-                // Search on MK
-                const mkResults = await mangakatana.searchManga(title);
+        return limitedManga;
 
-                // Find best match (simple check: first result)
-                if (mkResults && mkResults.length > 0) {
-                    const match = mkResults[0];
-                    if (match.latestChapter) {
-                        const numMatch = match.latestChapter.match(/(\d+[\.]?\d*)/);
-                        if (numMatch) {
-                            item.chapters = parseFloat(numMatch[1]);
-                        }
-                    }
-                }
-            } catch (e) {
-                // Ignore errors for individual items
-            }
-            return item;
-        }));
-
-        // Cache the results
-        if (enriched.length > 0) {
-            spotlightCache = enriched;
-            spotlightCacheTime = Date.now();
-            console.log(`Cached ${enriched.length} spotlight items`);
-        }
-
-        return enriched;
     } catch (error) {
         console.error('Error fetching enriched spotlight:', error);
         return [];
+    }
+}
+
+/**
+ * Helper to enrich manga with chapter data and update cache
+ */
+async function enrichAndCache(mangaList: any[]) {
+    console.log('Starting background spotlight enrichment...');
+    const enriched = await Promise.all(mangaList.map(async (item: any) => {
+        try {
+            // Search by title
+            const title = item.title?.english || item.title?.romaji || item.title?.native;
+            if (!title) return item;
+
+            // Use the EXPORTED searchManga to benefit from its cache
+            const mkResults = await searchManga(title);
+
+            // Find best match (simple check: first result)
+            if (mkResults && mkResults.length > 0) {
+                const match = mkResults[0];
+                if (match.latestChapter) {
+                    const numMatch = match.latestChapter.match(/(\d+[\.]?\d*)/);
+                    if (numMatch) {
+                        item.chapters = parseFloat(numMatch[1]);
+                    }
+                }
+            }
+        } catch (e) {
+            // Ignore errors for individual items
+        }
+        return item;
+    }));
+
+    // Cache the results
+    if (enriched.length > 0) {
+        spotlightCache = enriched;
+        spotlightCacheTime = Date.now();
+        console.log(`[Cache] Updated spotlight cache with ${enriched.length} enriched items`);
+    }
+}
+
+/**
+ * Pre-warm the spotlight cache on server startup
+ * This runs in the background so the server starts immediately
+ */
+export async function warmSpotlightCache() {
+    console.log('[Cache] Pre-warming spotlight cache...');
+    try {
+        await getEnrichedSpotlight();
+        console.log('[Cache] Spotlight cache warmed successfully');
+    } catch (error) {
+        console.error('[Cache] Failed to warm spotlight cache:', error);
     }
 }
