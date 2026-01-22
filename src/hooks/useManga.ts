@@ -204,11 +204,29 @@ export function useManga() {
                     return null;
                 }).filter(Boolean) as string[];
 
+                // GENERATE KEYWORD SEARCHES: MangaKatana works best with single keywords
+                // Extract unique/long words from titles for fallback searches
+                const commonWords = new Set(['the', 'a', 'an', 'of', 'and', 'in', 'to', 'for', 'is', 'on', 'that', 'by', 'this', 'with', 'from', 'or', 'be', 'are', 'was', 'as', 'at', 'all', 'but', 'not', 'you', 'have', 'had', 'they', 'we', 'can', 'will', 'my', 'me', 'up', 'do']);
+                const keywordSet = new Set<string>();
+                baseTitles.forEach(t => {
+                    const clean = t.replace(/['\u2019]s\b/gi, '').replace(/[^\w\s]/g, '');
+                    clean.split(/\s+/).forEach(word => {
+                        const lower = word.toLowerCase();
+                        // Keep words that are 4+ chars and not common words
+                        if (word.length >= 4 && !commonWords.has(lower)) {
+                            keywordSet.add(word);
+                        }
+                    });
+                });
+                const keywordSearches = Array.from(keywordSet);
+                console.log(`[useManga] Extracted keywords for fallback: ${keywordSearches.join(', ')}`);
+
                 const titlesToTry = [
                     ...shortTitles,               // 1. Shortened fallbacks (Highest success rate)
                     ...baseTitles,                // 2. Full English/Romaji
-                    manga.title_native,           // 3. Native
-                    ...nonLatinSynonyms           // 4. Other
+                    ...keywordSearches,           // 3. Single keyword searches (MangaKatana fallback)
+                    manga.title_native,           // 4. Native
+                    ...nonLatinSynonyms           // 5. Other
                 ].filter(Boolean) as string[];
 
                 // Remove duplicates while preserving order
@@ -330,30 +348,41 @@ export function useManga() {
 
                             // 3. FUZZY MATCH (RapidFuzz / fuzzball)
                             // "Run process.extractOne with scorer=fuzz.token_set_ratio"
+                            // IMPORTANT: Compare candidates against ALL baseTitles, not just the search keyword
+                            // This prevents false positives like "Stellar Theater" matching when searching "Stellar"
                             let bestFuzzyCandidate = null;
                             let bestFuzzyScore = 0;
 
                             for (const candidate of filteredCandidates) {
                                 const cTitle = (candidate.title || '');
-                                // Use token_set_ratio as requested
-                                const score = token_set_ratio(normalizedTitle, cTitle);
 
-                                if (score > bestFuzzyScore) {
-                                    bestFuzzyScore = score;
+                                // Find the best score against any of the original full titles
+                                let maxScoreForCandidate = 0;
+                                for (const origTitle of baseTitles) {
+                                    const score = token_set_ratio(origTitle, cTitle);
+                                    if (score > maxScoreForCandidate) {
+                                        maxScoreForCandidate = score;
+                                    }
+                                }
+
+                                console.log(`[useManga] Candidate "${cTitle}" best score: ${maxScoreForCandidate}`);
+
+                                if (maxScoreForCandidate > bestFuzzyScore) {
+                                    bestFuzzyScore = maxScoreForCandidate;
                                     bestFuzzyCandidate = candidate;
                                 }
                             }
 
                             if (bestFuzzyCandidate) {
-                                // "Check" Step: Best match score < 85 -> Flag
-                                if (bestFuzzyScore >= 85) {
-                                    // Threshold >= 85: Accept
+                                // "Check" Step: Best match score < 75 -> Flag
+                                if (bestFuzzyScore >= 75) {
+                                    // Threshold >= 75: Accept (lowered from 85 to handle translation variations)
                                     bestMatch = { id: bestFuzzyCandidate.id, title: bestFuzzyCandidate.title };
                                     console.log(`[useManga] Found FUZZY match: ${bestMatch.title} (Score: ${bestFuzzyScore})`);
 
-                                    // 3. AUTO-SAVE HIGH CONFIDENCE MATCHES
-                                    if (bestFuzzyScore > 95) {
-                                        console.log(`[useManga] High confidence match (>95). Saving mapping...`);
+                                    // AUTO-SAVE HIGH CONFIDENCE MATCHES
+                                    if (bestFuzzyScore > 85) {
+                                        console.log(`[useManga] High confidence match (>85). Saving mapping...`);
                                         fetch('http://localhost:3001/api/mapping', {
                                             method: 'POST',
                                             headers: { 'Content-Type': 'application/json' },
@@ -367,8 +396,8 @@ export function useManga() {
 
                                     break;
                                 } else {
-                                    // Threshold < 85: Flag for Manual Review
-                                    console.warn(`[useManga] FLAGGED Fuzzy Match: ${bestFuzzyCandidate.title} (Score: ${bestFuzzyScore}) - Below 0.85 threshold. Needs Review.`);
+                                    // Threshold < 75: Flag for Manual Review
+                                    console.warn(`[useManga] FLAGGED Fuzzy Match: ${bestFuzzyCandidate.title} (Score: ${bestFuzzyScore}) - Below 0.75 threshold. Needs Review.`);
                                     // Do NOT auto-accept. Continue trying other title variations if any.
                                 }
                             }
