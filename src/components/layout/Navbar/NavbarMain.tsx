@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Search, X } from 'lucide-react';
 import { animeService } from '../../../services/animeService';
 import { mangaService } from '../../../services/mangaService';
@@ -34,6 +34,7 @@ export default function Navbar({
 }: NavbarProps) {
     const searchInputRef = useRef<HTMLInputElement>(null);
     const navigate = useNavigate();
+    const location = useLocation();
     const { login, logout, user, avatar } = useAuth();
 
     const [isScrolled, setIsScrolled] = useState(false);
@@ -109,8 +110,10 @@ export default function Navbar({
         searchInputRef.current?.focus();
     };
 
+    const isTransparentPage = !location.pathname.includes('/manga/read') && !location.pathname.includes('/anime/watch');
+
     return (
-        <nav className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 ${isScrolled
+        <nav className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 ${isScrolled || !isTransparentPage
             ? 'bg-[#0a0a0a] border-b border-white/5 py-3'
             : 'bg-gradient-to-b from-black via-black/60 to-transparent border-transparent py-4'
             }`}>
