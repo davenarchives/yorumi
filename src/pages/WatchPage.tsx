@@ -65,7 +65,7 @@ export default function WatchPage() {
     const animeData: any = anime;
 
     return (
-        <div className="flex flex-col h-screen w-full bg-[#0a0a0a] text-white overflow-hidden pt-[72px]">
+        <div className="flex flex-col h-screen w-full bg-[#0a0a0a] text-white overflow-hidden pt-[60px]">
             {/* 1. Header Row (Fixed) */}
             <header className="h-14 shrink-0 flex items-center px-6 border-b border-white/10 bg-black/40 backdrop-blur-md z-40">
                 <button
