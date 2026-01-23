@@ -1,4 +1,7 @@
 // API Service for Anime operations - Using AniList
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { db } from "./firebase";
+
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 // Helper to map AniList response to our Anime interface format
@@ -195,10 +198,88 @@ export const animeService = {
         return fetchPromise;
     },
 
-    // Get episodes from scraper
+
+    // Get episodes from scraper with Firebase Caching
     async getEpisodes(session: string) {
+        // Only use caching if session is a potential ID (Anilist ID usually, but session here comes from scraper search sometimes)
+        // Wait, "session" in getEpisodes(session) typically refers to the anime ID or unique identifier used by the scraper.
+        // Let's verify what "session" actually is. It seems to be the ID used by the scraper.
+
+        // Use a consistent collection for episodes
+        const CACHE_COLLECTION = "anime_episodes";
+        // Convert session to a string safe for document ID if needed, though usually it's safe.
+        const docRef = doc(db, CACHE_COLLECTION, session);
+
+        try {
+            // 1. Try to get from Firestore
+            const docSnap = await getDoc(docRef);
+
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                // Optional: Check TTL here if needed. For now, assuming relatively static unless manually invalidated?
+                // Or maybe a 24h TTL? Episodes update weekly for airing, but completed ones don't change.
+                // Let's stick to simple caching first.
+                if (data.episodes && Array.isArray(data.episodes) && data.episodes.length > 0) {
+                    console.log(`[AnimeService] Hit Firebase cache for episodes: ${session}`);
+                    return { episodes: data.episodes };
+                }
+            }
+        } catch (error) {
+            console.warn("[AnimeService] Firebase read error:", error);
+            // Fallback to fetch
+        }
+
+        // 2. Fetch from API if not in cache
+        console.log(`[AnimeService] Missed cache, fetching episodes: ${session}`);
         const res = await fetch(`${API_BASE}/scraper/episodes?session=${session}`);
-        return res.json();
+        const data = await res.json();
+
+        // 3. Save to Firestore
+        if (data && data.episodes && Array.isArray(data.episodes) && data.episodes.length > 0) {
+            try {
+                await setDoc(docRef, {
+                    episodes: data.episodes,
+                    lastUpdated: Date.now()
+                });
+                console.log(`[AnimeService] Cached episodes to Firebase: ${session}`);
+            } catch (error) {
+                console.warn("[AnimeService] Firebase write error:", error);
+            }
+        }
+
+        return data;
+    },
+
+    // Get mapping from AniList ID to Scraper Session
+    async getAnimeMapping(malId: string | number) {
+        const docRef = doc(db, "anime_mappings", String(malId));
+        try {
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                if (data.session) {
+                    console.log(`[AnimeService] Hit mapping cache: ${malId} -> ${data.session}`);
+                    return data.session;
+                }
+            }
+        } catch (error) {
+            console.warn("[AnimeService] Error fetching mapping:", error);
+        }
+        return null;
+    },
+
+    // Save mapping
+    async saveAnimeMapping(malId: string | number, session: string) {
+        const docRef = doc(db, "anime_mappings", String(malId));
+        try {
+            await setDoc(docRef, {
+                session,
+                lastUpdated: Date.now()
+            });
+            console.log(`[AnimeService] Saved mapping: ${malId} -> ${session}`);
+        } catch (error) {
+            console.warn("[AnimeService] Error saving mapping:", error);
+        }
     },
 
     // Get stream links from scraper

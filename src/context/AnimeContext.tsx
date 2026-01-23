@@ -249,6 +249,21 @@ export function AnimeProvider({ children }: { children: ReactNode }) {
         if (scraperSessionCache.current.has(anime.mal_id)) {
             session = scraperSessionCache.current.get(anime.mal_id)!;
         } else {
+            // 0. Try to get from Firebase Mapping Cache
+            try {
+                const cachedSession = await animeService.getAnimeMapping(anime.mal_id);
+                if (cachedSession) {
+                    session = cachedSession;
+                    scraperSessionCache.current.set(anime.mal_id, cachedSession);
+                    console.log(`[AnimeContext] Using cached mapping for ${anime.mal_id}`);
+                }
+            } catch (e) {
+                console.warn("[AnimeContext] Failed to check mapping cache", e);
+            }
+
+        }
+
+        if (!session) {
             const queries = new Set<string>();
             if (anime.title) queries.add(anime.title);
             if (anime.title_english) queries.add(anime.title_english);
@@ -284,6 +299,8 @@ export function AnimeProvider({ children }: { children: ReactNode }) {
                     if (bestMatch && maxScore > 0) { // Threshold for acceptance
                         session = bestMatch.session;
                         scraperSessionCache.current.set(anime.mal_id, bestMatch.session);
+                        // Save to Firebase Cache
+                        animeService.saveAnimeMapping(anime.mal_id, bestMatch.session).catch(console.error);
                     }
                 }
             } catch (e) {
