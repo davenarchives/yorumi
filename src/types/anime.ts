@@ -32,6 +32,8 @@ export interface Anime {
 
     anilist_banner_image?: string;
     anilist_cover_image?: string;
+    logoUrl?: string; // Fanart.tv logo URL
+    logoSource?: 'fanart' | 'fallback'; // Source of the logo
     latestEpisode?: number; // For ongoing anime - the latest aired episode
     nextAiringEpisode?: {
         episode: number;
