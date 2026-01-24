@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import useEmblaCarousel from 'embla-carousel-react';
 import Autoplay from 'embla-carousel-autoplay';
 import type { Anime } from '../../../types/anime';
+import AnimeLogoImage from '../../../components/anime/AnimeLogoImage';
 
 interface SpotlightHeroProps {
     animeList: Anime[];
@@ -91,13 +92,18 @@ const SpotlightHero: React.FC<SpotlightHeroProps> = ({ animeList, onAnimeClick, 
                                         <div className="text-[#d886ff] font-bold tracking-wider text-sm md:text-base mb-2 md:mb-3 select-none flex items-center gap-3">
                                             #{index + 1} Spotlight
                                         </div>
-                                        {/* Dynamic font size based on title length to ensure it fits and isn't truncated */}
-                                        <h1 className={`${anime.title.length > 50 ? 'text-xl md:text-2xl lg:text-3xl' :
-                                            anime.title.length > 30 ? 'text-2xl md:text-3xl lg:text-4xl' :
-                                                'text-3xl md:text-4xl lg:text-5xl'
-                                            } font-black text-white mb-3 md:mb-4 leading-[1.1] drop-shadow-lg select-none line-clamp-2 md:line-clamp-3`}>
-                                            {anime.title}
-                                        </h1>
+                                        {/* Logo instead of text title */}
+                                        <div className={`${anime.title.length > 50 ? 'max-h-10 md:max-h-12' :
+                                            anime.title.length > 30 ? 'max-h-12 md:max-h-16' :
+                                                'max-h-16 md:max-h-20'
+                                            } mb-6 md:mb-8 flex items-start`}>
+                                            <AnimeLogoImage
+                                                anilistId={anime.id || anime.mal_id}
+                                                title={anime.title}
+                                                className="drop-shadow-2xl max-h-full"
+                                                size="small"
+                                            />
+                                        </div>
 
                                         <div className="flex items-center flex-wrap gap-x-4 gap-y-2 text-xs md:text-sm text-white mb-4 md:mb-8 font-medium select-none">
                                             <span className="flex items-center gap-1.5">
