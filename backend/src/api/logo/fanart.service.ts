@@ -207,12 +207,52 @@ export async function warmupAnimeDatabase(): Promise<void> {
             animeDatabaseCache = response.data;
             databaseLastFetched = Date.now();
             console.log(`[Fanart] ✓ Anime database warmed up with ${animeDatabaseCache.length} entries`);
+
+            // After database is ready, pre-warm popular logos
+            preWarmPopularLogos();
         } else {
             console.warn('[Fanart] ✗ Failed to warm up database: invalid format');
         }
     } catch (error) {
         console.warn('[Fanart] ✗ Failed to warm up database:', error);
     }
+}
+
+/**
+ * Pre-warm logos for popular anime to reduce first-request latency
+ * These are commonly accessed titles that benefit from cache warmup
+ */
+async function preWarmPopularLogos(): Promise<void> {
+    // Popular anime AniList IDs - commonly accessed titles
+    const popularIds = [
+        21,      // One Piece
+        16498,   // Attack on Titan
+        113415,  // Jujutsu Kaisen
+        101922,  // Kimetsu no Yaiba
+        20958,   // Shingeki no Kyojin S2
+        21459,   // Boku no Hero Academia
+        1535,    // Death Note
+        11061,   // Hunter x Hunter
+        20,      // Naruto
+        21087,   // One Punch Man
+        154587,  // Frieren
+        145064,  // Solo Leveling
+        127230,  // Chainsaw Man
+    ];
+
+    console.log(`[Fanart] Pre-warming ${popularIds.length} popular anime logos...`);
+
+    let warmedCount = 0;
+    for (const id of popularIds) {
+        try {
+            const result = await getAnimeLogo(id);
+            if (result.logo) warmedCount++;
+        } catch (e) {
+            // Ignore errors, this is best-effort
+        }
+    }
+
+    console.log(`[Fanart] ✓ Pre-warmed ${warmedCount}/${popularIds.length} popular logos`);
 }
 
 /**
