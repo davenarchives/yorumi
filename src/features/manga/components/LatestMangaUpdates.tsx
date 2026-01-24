@@ -48,11 +48,6 @@ export default function LatestMangaUpdates({ onMangaClick }: LatestMangaUpdatesP
         <div className="bg-[#1a1a2e] rounded-xl p-6">
             <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-[#ff6b9d] uppercase tracking-wide">Latest Updates</h2>
-                <div className="flex gap-2">
-                    <span className="text-xs text-gray-400 bg-[#0a0a0a] px-3 py-1.5 rounded-lg border border-white/5">
-                        MangaKatana
-                    </span>
-                </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -78,7 +73,7 @@ export default function LatestMangaUpdates({ onMangaClick }: LatestMangaUpdatesP
                                 {manga.title}
                             </h3>
                             <div className="flex items-center gap-2 mb-2">
-                                <span className="text-[10px] text-gray-400 bg-white/5 px-1.5 py-0.5 rounded">Manga</span>
+                                <span className="text-[10px] text-gray-400 bg-white/5 px-1.5 py-0.5 rounded">Comics</span>
                             </div>
 
                             <div className="flex items-center gap-1.5 text-xs text-[#22c55e] font-medium">
