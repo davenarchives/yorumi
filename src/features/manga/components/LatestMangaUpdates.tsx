@@ -16,21 +16,30 @@ interface LatestMangaUpdatesProps {
 export default function LatestMangaUpdates({ onMangaClick }: LatestMangaUpdatesProps) {
     const [updates, setUpdates] = useState<HotUpdate[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    const fetchUpdates = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            console.log('[LatestMangaUpdates] Fetching hot updates...');
+            const data = await mangaService.getHotUpdates();
+            console.log('[LatestMangaUpdates] Received data:', data);
+            if (data && Array.isArray(data)) {
+                setUpdates(data);
+            } else {
+                console.warn('[LatestMangaUpdates] Invalid data format:', data);
+                setUpdates([]);
+            }
+        } catch (err) {
+            console.error('[LatestMangaUpdates] Failed to fetch hot updates:', err);
+            setError('Failed to load updates');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchUpdates = async () => {
-            try {
-                const updates = await mangaService.getHotUpdates();
-                if (updates) {
-                    setUpdates(updates);
-                }
-            } catch (error) {
-                console.error('Failed to fetch hot updates:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
         fetchUpdates();
     }, []);
 
@@ -39,6 +48,44 @@ export default function LatestMangaUpdates({ onMangaClick }: LatestMangaUpdatesP
             <div className="bg-[#1a1a2e] rounded-xl p-6 h-full min-h-[400px]">
                 <div className="flex items-center justify-center h-full">
                     <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-[#ff6b9d]"></div>
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="bg-[#1a1a2e] rounded-xl p-6">
+                <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-xl font-bold text-[#ff6b9d] uppercase tracking-wide">Latest Updates</h2>
+                </div>
+                <div className="flex flex-col items-center justify-center py-8 text-gray-400">
+                    <p className="mb-4">{error}</p>
+                    <button
+                        onClick={fetchUpdates}
+                        className="px-4 py-2 bg-[#ff6b9d] text-white rounded-lg hover:bg-[#ff6b9d]/80 transition-colors"
+                    >
+                        Retry
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    if (updates.length === 0) {
+        return (
+            <div className="bg-[#1a1a2e] rounded-xl p-6">
+                <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-xl font-bold text-[#ff6b9d] uppercase tracking-wide">Latest Updates</h2>
+                </div>
+                <div className="flex flex-col items-center justify-center py-8 text-gray-400">
+                    <p className="mb-4">No updates available</p>
+                    <button
+                        onClick={fetchUpdates}
+                        className="px-4 py-2 bg-[#ff6b9d]/20 text-[#ff6b9d] rounded-lg hover:bg-[#ff6b9d]/30 transition-colors"
+                    >
+                        Refresh
+                    </button>
                 </div>
             </div>
         );
