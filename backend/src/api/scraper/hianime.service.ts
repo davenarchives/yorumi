@@ -28,14 +28,6 @@ export class HiAnimeScraper {
 
                 // Extract Images
                 const poster = $el.find('.film-poster-img').attr('data-src') || $el.find('.film-poster-img').attr('src');
-
-                // Banner is usually in a style attribute, but sometimes just implied or separate. 
-                // In HiAnime structure, the background might be the `.deslide-cover` image itself if it's wide 
-                // OR it's a separate div. 
-                // Based on common structure, let's look for the biggest image or the specific class.
-                // The slider usually has `img.deslide-cover-img` or similar.
-                // If not found, fall back to poster.
-                // Checking previous logs (truncated), there was `deslide-cover`.
                 let banner = $el.find('.deslide-cover .film-poster-img').attr('data-src') || $el.find('.deslide-cover .film-poster-img').attr('src');
 
                 // Metadata
@@ -63,6 +55,119 @@ export class HiAnimeScraper {
         } catch (error) {
             console.error('Error scraping HiAnime spotlight:', error);
             return [];
+        }
+    }
+
+    async getAZList(letter: string, page: number = 1): Promise<any> {
+        try {
+            // HiAnime A-Z List URL structure: /az-list/{letter}?page={page}
+            let path = '';
+            if (letter.toLowerCase() === 'all') path = '/az-list';
+            else if (['#', '0-9'].includes(letter)) path = '/az-list/other';
+            else path = `/az-list/${letter.toUpperCase()}`;
+
+            const url = `${this.BASE_URL}${path}?page=${page}`;
+            console.log(`Scraping AZ List: ${url}`);
+
+            const { data } = await axios.get(url, {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Referer': this.BASE_URL
+                }
+            });
+
+            const $ = cheerio.load(data);
+            const results: any[] = [];
+
+            // Handle pagination
+            let lastPage = 1;
+            const paginationLast = $('.pagination .page-item:not(.next) a').last().attr('href');
+            if (paginationLast) {
+                const match = paginationLast.match(/page=(\d+)/);
+                if (match) lastPage = parseInt(match[1]);
+            }
+            const hasNextPage = !!$('.pagination .page-item.next');
+
+            $('.film_list-wrap .flw-item').each((_, element) => {
+                const $el = $(element);
+                const title = $el.find('.film-name a').text().trim();
+                const link = $el.find('.film-name a').attr('href') || '';
+                const id = link.split('?')[0].replace('/', '');
+
+                const poster = $el.find('.film-poster-img').attr('data-src') || $el.find('.film-poster-img').attr('src');
+                const type = $el.find('.fdi-item.type').text().trim() || 'TV';
+
+                if (title && id) {
+                    results.push({
+                        id,
+                        title,
+                        poster,
+                        type,
+                        link: this.BASE_URL + link
+                    });
+                }
+            });
+
+            return {
+                data: results,
+                pagination: {
+                    last_visible_page: lastPage,
+                    has_next_page: hasNextPage,
+                    current_page: page
+                }
+            };
+
+        } catch (error) {
+            console.error(`Error scraping AZ list for ${letter}:`, error);
+            return { data: [], pagination: { has_next_page: false, last_visible_page: 1 } };
+        }
+    }
+
+    async getAnimeInfo(id: string): Promise<any> {
+        try {
+            // Check for /watch/ prefix or direct slug
+            const urlPath = id.startsWith('watch/') ? id : `watch/${id}`;
+            const url = `${this.BASE_URL}/${urlPath}`;
+            console.log(`Scraping Anime Info: ${url}`);
+
+            const { data } = await axios.get(url, {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Referer': this.BASE_URL
+                }
+            });
+
+            const $ = cheerio.load(data);
+
+            // Extract Details
+            const title = $('.anisc-detail .film-name').text().trim();
+            const poster = $('.anisc-poster .film-poster-img').attr('data-src') || $('.anisc-poster .film-poster-img').attr('src');
+            const description = $('.anisc-detail .film-description .text').text().trim();
+
+            // Stats (Episodes, etc)
+            const stats: any = {};
+            $('.film-stats .item').each((_, el) => {
+                const text = $(el).text();
+                if (text.includes('Sub')) stats.sub = parseInt(text.replace(/\D/g, ''));
+                if (text.includes('Dub')) stats.dub = parseInt(text.replace(/\D/g, ''));
+                if (text.includes('Ep')) stats.episodes = { sub: stats.sub || 0, dub: stats.dub || 0 }; // Approx
+            });
+
+            // Status
+            // Usually in .anisc-info .item-title:contains("Status") + .name
+            const status = $('.anisc-info .item-title:contains("Status")').next().text().trim();
+
+            return {
+                id,
+                title,
+                poster,
+                description,
+                status,
+                stats
+            };
+        } catch (error) {
+            console.error(`Error scraping info for ${id}:`, error);
+            return null;
         }
     }
 }

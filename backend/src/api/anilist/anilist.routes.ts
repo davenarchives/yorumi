@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { anilistService } from './anilist.service';
+import { HiAnimeScraper } from '../scraper/hianime.service';
 
 const router = Router();
 
@@ -102,6 +103,34 @@ router.get('/popular-this-season', async (req, res) => {
     }
 });
 
+// A-Z List for Manga
+router.get('/manga/az-list/:letter', async (req, res) => {
+    try {
+        const { letter } = req.params;
+        const page = req.query.page ? parseInt(req.query.page as string) : 1;
+        const perPage = req.query.limit ? parseInt(req.query.limit as string) : 18;
+
+        const data = await anilistService.getMangaAZList(letter, page, perPage);
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch Manga A-Z list' });
+    }
+});
+
+// A-Z List for Anime
+router.get('/anime/az-list/:letter', async (req, res) => {
+    try {
+        const { letter } = req.params;
+        const page = req.query.page ? parseInt(req.query.page as string) : 1;
+        const perPage = req.query.limit ? parseInt(req.query.limit as string) : 18;
+
+        const data = await anilistService.getAnimeAZList(letter, page, perPage);
+        res.json(data);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch Anime A-Z list' });
+    }
+});
+
 // Search anime
 router.get('/search', async (req, res) => {
     try {
@@ -142,22 +171,69 @@ router.get('/search/manga', async (req, res) => {
     }
 });
 
-// Get anime by ID
+// Get anime details
 router.get('/anime/:id', async (req, res) => {
     try {
-        const id = parseInt(req.params.id);
-        if (isNaN(id)) {
+        const { id } = req.params;
+
+        // Hybrid Logic for Scraper IDs (e.g. s:one-piece-100)
+        if (id.startsWith('s:')) {
+            const scraperId = id.substring(2);
+            // 1. Fetch scraper info
+            const scraperDetails = await new HiAnimeScraper().getAnimeInfo(scraperId);
+            if (!scraperDetails) {
+                return res.status(404).json({ error: 'Anime not found on scraper' });
+            }
+
+            // 2. Search AniList by Title
+            const title = scraperDetails.title;
+            const searchRes = await anilistService.searchAnime(title);
+            const anilistMatch = searchRes[0];
+
+            if (anilistMatch) {
+                // 3. Get full AniList details
+                const anilistDetails = await anilistService.getMediaDetails(anilistMatch.id);
+                if (anilistDetails) {
+                    // 4. Return merged result (AniList metadata + Scraper ID hint)
+                    return res.json({
+                        ...anilistDetails,
+                        id: id, // Maintain s: prefix
+                        mal_id: anilistDetails.id, // Keep AniList/MAL ID ref as mal_id
+                        scraperId: scraperId
+                    });
+                }
+            }
+
+            // Fallback: Return mapped scraper data
+            return res.json({
+                id: id,
+                title: { romaji: scraperDetails.title, english: scraperDetails.title },
+                coverImage: { large: scraperDetails.poster },
+                description: scraperDetails.description,
+                status: scraperDetails.status,
+                episodes: scraperDetails.stats?.episodes?.sub || null,
+                format: 'TV',
+                genres: [],
+                averageScore: 0
+            });
+        }
+
+        const numericId = parseInt(id);
+        if (isNaN(numericId)) {
             res.status(400).json({ error: 'Invalid ID' });
             return;
         }
 
-        const data = await anilistService.getAnimeById(id);
+        const data = await anilistService.getMediaDetails(numericId); // Use getMediaDetails to be consistent?
+        // Or getAnimeById was calling getMediaDetails? 
+        // anilistService.getAnimeById uses generic fetch.
+        // Let's stick to getMediaDetails which I added.
         if (!data) {
             res.status(404).json({ error: 'Anime not found' });
             return;
         }
         res.json(data);
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error in anime by ID route:', error);
         res.status(500).json({ error: 'Internal server error' });
     }

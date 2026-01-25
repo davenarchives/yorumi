@@ -22,7 +22,9 @@ router.get('/episodes', async (req, res) => {
         if (!session) {
             return res.status(400).json({ error: 'Query parameter session is required' });
         }
-        const result = await scraperService.getEpisodes(session);
+        // Support hybrid s: IDs (strip prefix)
+        const realSession = session.startsWith('s:') ? session.substring(2) : session;
+        const result = await scraperService.getEpisodes(realSession);
         res.json(result);
     } catch (error: any) {
         res.status(500).json({ error: error.message });
