@@ -14,6 +14,7 @@ import ProfilePage from './pages/ProfilePage';
 import { useAnime } from './hooks/useAnime';
 import { animeService } from './services/animeService';
 import { mangaService } from './services/mangaService';
+import ScrollToTop from './components/ui/ScrollToTop';
 
 // Debounce helper
 function useDebounce<T>(value: T, delay: number): T {
@@ -149,11 +150,11 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white font-sans selection:bg-yorumi-accent selection:text-white overflow-x-hidden">
+    <div className={`min-h-screen bg-yorumi-bg text-white font-sans ${activeTab === 'manga' ? 'selection:bg-yorumi-manga' : 'selection:bg-yorumi-accent'} selection:text-white overflow-x-hidden`}>
       {/* Background Gradients */}
       <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-yorumi-accent/5 rounded-full blur-[120px]" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-500/5 rounded-full blur-[120px]" />
+        <div className={`absolute top-[-10%] left-[-10%] w-[40%] h-[40%] ${activeTab === 'manga' ? 'bg-yorumi-manga/5' : 'bg-yorumi-accent/5'} rounded-full blur-[120px]`} />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-yorumi-main/5 rounded-full blur-[120px]" />
       </div>
 
       <Navbar
@@ -182,6 +183,9 @@ function App() {
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+
+      {/* Scroll to Top Button */}
+      <ScrollToTop activeTab={activeTab as 'anime' | 'manga'} />
     </div>
   );
 }
