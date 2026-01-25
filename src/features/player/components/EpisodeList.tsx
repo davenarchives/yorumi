@@ -78,7 +78,7 @@ export default function EpisodeList({
                                                 <button
                                                     key={range}
                                                     onClick={() => { setSelectedRange(range); setShowRangeMenu(false); }}
-                                                    className={`w-full text-left px-3 py-1.5 text-xs rounded-md transition-colors ${selectedRange === range ? 'bg-yellow-500/20 text-yellow-500' : 'text-gray-300 hover:bg-white/10'}`}
+                                                    className={`w-full text-left px-3 py-1.5 text-xs rounded-md transition-colors ${selectedRange === range ? 'bg-yorumi-accent/20 text-yorumi-accent' : 'text-gray-300 hover:bg-white/10'}`}
                                                 >
                                                     {range}
                                                 </button>
@@ -119,7 +119,7 @@ export default function EpisodeList({
             <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:'none']">
                 {isLoading ? (
                     <div className="flex items-center justify-center py-12">
-                        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-indigo-500"></div>
+                        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-yorumi-accent"></div>
                     </div>
                 ) : filteredEpisodes.length > 0 ? (
                     <div className={viewMode === 'grid' ? "grid grid-cols-5 gap-2 p-3" : "flex flex-col"}>
@@ -137,7 +137,7 @@ export default function EpisodeList({
                                     className={`
                                         group relative transition-all duration-200
                                         ${viewMode === 'grid'
-                                            ? `aspect-square rounded-md flex items-center justify-center border ${isCurrent ? 'bg-yellow-500 text-black border-yellow-500 font-bold' : isWatched ? 'bg-white/5 text-gray-600 border-white/10 opacity-50' : 'bg-white/10 border-white/5 hover:bg-white/20 text-gray-400 hover:text-white'}`
+                                            ? `aspect-square rounded-md flex items-center justify-center border ${isCurrent ? 'bg-yorumi-accent text-white border-yorumi-accent font-bold' : isWatched ? 'bg-white/5 text-gray-600 border-white/10 opacity-50' : 'bg-white/10 border-white/5 hover:bg-white/20 text-gray-400 hover:text-white'}`
                                             : `w-full px-5 py-3 text-left flex flex-col justify-center ${isCurrent ? 'bg-white/10' : isWatched ? 'opacity-50' : 'hover:bg-white/5'}`
                                         }
                                     `}
@@ -147,12 +147,12 @@ export default function EpisodeList({
                                     ) : (
                                         <>
                                             <div className="flex items-center justify-between w-full mb-0.5">
-                                                <span className={`text-sm font-bold ${isCurrent ? 'text-yellow-500' : isWatched ? 'text-gray-600' : 'text-gray-400 group-hover:text-white'}`}>
+                                                <span className={`text-sm font-bold ${isCurrent ? 'text-yorumi-accent' : isWatched ? 'text-gray-600' : 'text-gray-400 group-hover:text-white'}`}>
                                                     EP {ep.episodeNumber}
                                                 </span>
                                                 {isCurrent && (
-                                                    <span className="w-8 h-8 rounded-full bg-yellow-500 flex items-center justify-center">
-                                                        <svg className="w-4 h-4 text-black" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                                                    <span className="w-8 h-8 rounded-full bg-yorumi-accent flex items-center justify-center">
+                                                        <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
                                                     </span>
                                                 )}
                                             </div>

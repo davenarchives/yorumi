@@ -121,14 +121,14 @@ export default function AnimeDetailsPage() {
                             className={`pb-3 text-lg font-bold transition-colors relative ${activeTab === 'summary' ? 'text-white' : 'text-gray-500 hover:text-white'}`}
                         >
                             Summary
-                            {activeTab === 'summary' && <div className="absolute bottom-0 inset-x-0 h-0.5 bg-pink-500" />}
+                            {activeTab === 'summary' && <div className="absolute bottom-0 inset-x-0 h-0.5 bg-yorumi-accent" />}
                         </button>
                         <button
                             onClick={() => setActiveTab('relations')}
                             className={`pb-3 text-lg font-bold transition-colors relative ${activeTab === 'relations' ? 'text-white' : 'text-gray-500 hover:text-white'}`}
                         >
                             Relations
-                            {activeTab === 'relations' && <div className="absolute bottom-0 inset-x-0 h-0.5 bg-pink-500" />}
+                            {activeTab === 'relations' && <div className="absolute bottom-0 inset-x-0 h-0.5 bg-yorumi-accent" />}
                         </button>
                     </div>
 

@@ -89,7 +89,7 @@ export default function EstimatedSchedule({ onAnimeClick }: EstimatedSchedulePro
         <div className="bg-[#1a1a2e] rounded-xl p-6">
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-[#ff6b9d]">Estimated Schedule</h2>
+                <h2 className="text-xl font-bold text-yorumi-accent">Estimated Schedule</h2>
                 <span className="text-xs text-gray-400 bg-[#0a0a0a] px-3 py-1.5 rounded-lg">
                     {currentTime}
                 </span>
@@ -111,7 +111,7 @@ export default function EstimatedSchedule({ onAnimeClick }: EstimatedSchedulePro
                             key={day.offset}
                             onClick={() => setSelectedDayOffset(day.offset)}
                             className={`flex-1 min-w-[70px] py-2 px-3 rounded-lg text-center transition-all ${selectedDayOffset === day.offset
-                                ? 'bg-[#ff6b9d] text-white'
+                                ? 'bg-yorumi-accent text-white'
                                 : 'bg-[#2a2a4a] text-gray-400 hover:bg-[#3a3a5a]'
                                 }`}
                         >
@@ -134,7 +134,7 @@ export default function EstimatedSchedule({ onAnimeClick }: EstimatedSchedulePro
             <div className="space-y-3">
                 {loading ? (
                     <div className="flex items-center justify-center py-8">
-                        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-[#ff6b9d]"></div>
+                        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-yorumi-accent"></div>
                     </div>
                 ) : displayedSchedule.length === 0 ? (
                     <div className="text-center text-gray-500 py-8">
@@ -150,7 +150,7 @@ export default function EstimatedSchedule({ onAnimeClick }: EstimatedSchedulePro
                             <span className="text-gray-500 text-sm font-mono w-12">
                                 {formatTime(item.airingAt)}
                             </span>
-                            <span className="flex-1 text-white font-medium truncate hover:text-[#ff6b9d] transition-colors">
+                            <span className="flex-1 text-white font-medium truncate hover:text-yorumi-accent transition-colors">
                                 {item.media.title.english || item.media.title.romaji}
                             </span>
                             <span className="text-gray-400 text-sm flex items-center gap-1">

@@ -44,7 +44,7 @@ export default function PlayerControls({
             <div className="mb-3">
                 <h2 className="text-lg font-bold text-white leading-tight">{animeTitle}</h2>
                 <div className="flex items-baseline gap-3">
-                    <p className="text-yellow-500 font-medium text-sm">Episode {episodeNumber}</p>
+                    <p className="text-yorumi-accent font-medium text-sm">Episode {episodeNumber}</p>
                     {episodeTitle && <p className="text-gray-400 text-xs">{episodeTitle}</p>}
                 </div>
             </div>
@@ -64,7 +64,7 @@ export default function PlayerControls({
                 {/* Next */}
                 <button
                     onClick={onNext}
-                    className="flex-shrink-0 px-4 py-2.5 rounded-lg bg-yellow-500 hover:bg-yellow-400 text-black font-bold flex items-center gap-2 transition-colors"
+                    className="flex-shrink-0 px-4 py-2.5 rounded-lg bg-yorumi-accent hover:bg-yorumi-accent/90 text-white font-bold flex items-center gap-2 transition-colors"
                 >
                     <span className="hidden sm:inline">Next</span>
                     <ChevronRight className="w-4 h-4" />
@@ -91,7 +91,7 @@ export default function PlayerControls({
                                 </div>
                                 <button
                                     onClick={onSetAutoQuality}
-                                    className={`w-full text-left px-4 py-3 text-base rounded-lg transition-colors ${isAutoQuality ? 'bg-yellow-500 text-black font-bold' : 'text-gray-300 hover:bg-white/10'}`}
+                                    className={`w-full text-left px-4 py-3 text-base rounded-lg transition-colors ${isAutoQuality ? 'bg-yorumi-accent text-white font-bold' : 'text-gray-300 hover:bg-white/10'}`}
                                 >
                                     Auto
                                 </button>
@@ -99,7 +99,7 @@ export default function PlayerControls({
                                     <button
                                         key={idx}
                                         onClick={() => onQualityChange(idx)}
-                                        className={`w-full text-left px-4 py-3 text-base rounded-lg transition-colors ${!isAutoQuality && selectedStreamIndex === idx ? 'bg-yellow-500 text-black font-bold' : 'text-gray-300 hover:bg-white/10'}`}
+                                        className={`w-full text-left px-4 py-3 text-base rounded-lg transition-colors ${!isAutoQuality && selectedStreamIndex === idx ? 'bg-yorumi-accent text-white font-bold' : 'text-gray-300 hover:bg-white/10'}`}
                                     >
                                         {stream.quality ? stream.quality.replace(/\s?p$/i, '') : 'Unknown'}P {stream.isHls && '(HLS)'}
                                     </button>
@@ -110,7 +110,7 @@ export default function PlayerControls({
                             <div className="hidden sm:flex absolute bottom-full right-0 mb-2 bg-[#1a1a1a] border border-white/10 rounded-lg p-1.5 min-w-[140px] shadow-xl flex-col gap-1 z-20">
                                 <button
                                     onClick={onSetAutoQuality}
-                                    className={`w-full text-left px-3 py-1.5 text-sm rounded-md transition-colors ${isAutoQuality ? 'bg-yellow-500/20 text-yellow-500' : 'text-gray-300 hover:bg-white/10'}`}
+                                    className={`w-full text-left px-3 py-1.5 text-sm rounded-md transition-colors ${isAutoQuality ? 'bg-yorumi-accent/20 text-yorumi-accent' : 'text-gray-300 hover:bg-white/10'}`}
                                 >
                                     Auto
                                 </button>
@@ -118,7 +118,7 @@ export default function PlayerControls({
                                     <button
                                         key={idx}
                                         onClick={() => onQualityChange(idx)}
-                                        className={`w-full text-left px-3 py-1.5 text-sm rounded-md transition-colors ${!isAutoQuality && selectedStreamIndex === idx ? 'bg-yellow-500/20 text-yellow-500' : 'text-gray-300 hover:bg-white/10'}`}
+                                        className={`w-full text-left px-3 py-1.5 text-sm rounded-md transition-colors ${!isAutoQuality && selectedStreamIndex === idx ? 'bg-yorumi-accent/20 text-yorumi-accent' : 'text-gray-300 hover:bg-white/10'}`}
                                     >
                                         {stream.quality ? stream.quality.replace(/\s?p$/i, '') : 'Unknown'}P {stream.isHls && '(HLS)'}
                                     </button>

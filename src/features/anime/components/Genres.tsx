@@ -8,11 +8,15 @@ interface Genre {
 
 interface GenresProps {
     onGenreClick?: (genre: string) => void;
+    theme?: 'anime' | 'manga';
 }
 
-export default function Genres({ onGenreClick }: GenresProps) {
+export default function Genres({ onGenreClick, theme = 'anime' }: GenresProps) {
     const [genres, setGenres] = useState<Genre[]>([]);
     const [loading, setLoading] = useState(true);
+
+    const accentColor = theme === 'manga' ? 'text-yorumi-manga' : 'text-yorumi-accent';
+    const borderColor = theme === 'manga' ? 'border-yorumi-manga' : 'border-yorumi-accent';
 
     useEffect(() => {
         const fetchGenres = async () => {
@@ -33,7 +37,7 @@ export default function Genres({ onGenreClick }: GenresProps) {
         return (
             <div className="bg-[#1a1a2e] rounded-xl p-6">
                 <div className="flex items-center justify-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-[#ff6b9d]"></div>
+                    <div className={`animate-spin rounded-full h-8 w-8 border-t-2 ${borderColor}`}></div>
                 </div>
             </div>
         );
@@ -42,7 +46,7 @@ export default function Genres({ onGenreClick }: GenresProps) {
     return (
         <div className="bg-[#1a1a2e] rounded-xl p-6">
             {/* Header */}
-            <h2 className="text-xl font-bold text-[#ff6b9d] mb-6">Genres</h2>
+            <h2 className={`text-xl font-bold ${accentColor} mb-6`}>Genres</h2>
 
             {/* Genre Tags */}
             <div className="grid grid-cols-3 gap-3">
