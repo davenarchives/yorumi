@@ -4,12 +4,14 @@ interface RandomButtonProps {
     isLoading: boolean;
     onClick: () => void;
     variant?: 'desktop' | 'mobile';
+    theme?: 'anime' | 'manga';
 }
 
 export default function RandomButton({
     isLoading,
     onClick,
     variant = 'desktop',
+    theme = 'anime'
 }: RandomButtonProps) {
     if (variant === 'mobile') {
         return (
@@ -24,14 +26,16 @@ export default function RandomButton({
         );
     }
 
+    const hoverColor = theme === 'manga' ? 'group-hover:text-yorumi-manga' : 'group-hover:text-yorumi-accent';
+
     return (
         <button
             onClick={onClick}
             disabled={isLoading}
             className="group flex items-center justify-center p-2 text-gray-500 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Random Anime"
+            title={`Random ${theme === 'manga' ? 'Manga' : 'Anime'}`}
         >
-            <Shuffle className={`w-5 h-5 group-hover:text-yorumi-accent transition-all duration-300 ${isLoading ? 'animate-spin' : 'group-hover:rotate-180'}`} />
+            <Shuffle className={`w-5 h-5 ${hoverColor} transition-all duration-300 ${isLoading ? 'animate-spin' : 'group-hover:rotate-180'}`} />
         </button>
     );
 }

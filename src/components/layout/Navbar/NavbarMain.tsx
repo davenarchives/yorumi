@@ -77,18 +77,18 @@ export default function Navbar({
             if (activeTab === 'manga') {
                 const result = await mangaService.getRandomManga();
                 if (result && result.id) {
-                    navigate(`/manga/${result.id}`, { state: { fromRandom: true } });
+                    navigate(`/manga/details/${result.id}`, { state: { fromRandom: true } });
                 }
             } else {
                 const result = await animeService.getRandomAnime();
                 if (result && result.id) {
-                    navigate(`/anime/${result.id}`, { state: { fromRandom: true } });
+                    navigate(`/anime/details/${result.id}`, { state: { fromRandom: true } });
                 }
             }
         } catch (error) {
             console.error('Failed to get random media:', error);
             const randomId = Math.floor(Math.random() * 50000) + 1;
-            navigate(`/${activeTab}/${randomId}`, { state: { fromRandom: true } });
+            navigate(`/${activeTab}/details/${randomId}`, { state: { fromRandom: true } });
         } finally {
             setIsLoadingRandom(false);
         }
@@ -114,7 +114,7 @@ export default function Navbar({
 
     return (
         <nav className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 ${isScrolled || !isTransparentPage
-            ? 'bg-[#0a0a0a] border-b border-white/5 py-3'
+            ? 'bg-yorumi-bg border-b border-white/5 py-3'
             : 'bg-gradient-to-b from-black via-black/60 to-transparent border-transparent py-4'
             }`}>
             <div className="px-4 md:px-8 flex items-center justify-between">
@@ -128,7 +128,7 @@ export default function Navbar({
                         tabIndex={0}
                     >
                         <span className="text-xl md:text-2xl font-black text-white tracking-tighter">YORU</span>
-                        <span className="text-xl md:text-2xl font-black text-yorumi-accent tracking-tighter">MI</span>
+                        <span className={`text-xl md:text-2xl font-black ${activeTab === 'manga' ? 'text-yorumi-manga' : 'text-yorumi-accent'} tracking-tighter`}>MI</span>
                     </div>
 
                     {/* Desktop Search */}
@@ -155,6 +155,7 @@ export default function Navbar({
                         <RandomButton
                             isLoading={isLoadingRandom}
                             onClick={handleRandom}
+                            theme={activeTab}
                         />
                     </div>
                 </div>
@@ -186,7 +187,7 @@ export default function Navbar({
             {/* Mobile Search Bar & Controls Overlay */}
             <div className={`
                 md:hidden overflow-hidden transition-all duration-300 ease-in-out
-                ${showMobileSearch ? 'max-h-40 opacity-100 border-t border-white/5 bg-[#0a0a0a]/95 backdrop-blur-md' : 'max-h-0 opacity-0'}
+                ${showMobileSearch ? 'max-h-40 opacity-100 border-t border-white/5 bg-yorumi-bg/95 backdrop-blur-md' : 'max-h-0 opacity-0'}
             `}>
                 <div className="p-4 space-y-4">
                     <SearchBar
@@ -213,6 +214,7 @@ export default function Navbar({
                             isLoading={isLoadingRandom}
                             onClick={() => { handleRandom(); setShowMobileSearch(false); }}
                             variant="mobile"
+                            theme={activeTab}
                         />
                     </div>
                 </div>

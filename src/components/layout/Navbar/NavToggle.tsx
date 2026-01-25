@@ -30,8 +30,8 @@ export default function NavToggle({
                 <button
                     onClick={handleAnimeClick}
                     className={`px-4 py-2 text-xs font-black uppercase tracking-wider transition-all ${activeTab === 'anime'
-                            ? 'bg-yorumi-accent text-[#0a0a0a]'
-                            : 'text-gray-500'
+                        ? 'bg-yorumi-accent text-[#0a0a0a]'
+                        : 'text-gray-500'
                         }`}
                 >
                     Anime
@@ -39,8 +39,8 @@ export default function NavToggle({
                 <button
                     onClick={handleMangaClick}
                     className={`px-4 py-2 text-xs font-black uppercase tracking-wider transition-all ${activeTab === 'manga'
-                            ? 'bg-yorumi-main text-white'
-                            : 'text-gray-500'
+                        ? 'bg-yorumi-manga text-white'
+                        : 'text-gray-500'
                         }`}
                 >
                     Manga
@@ -54,8 +54,8 @@ export default function NavToggle({
             <button
                 onClick={handleAnimeClick}
                 className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider transition-all duration-300 ${activeTab === 'anime'
-                        ? 'bg-yorumi-accent text-[#0a0a0a]'
-                        : 'text-gray-500 hover:text-white'
+                    ? 'bg-yorumi-accent text-[#0a0a0a]'
+                    : 'text-gray-500 hover:text-white'
                     }`}
             >
                 ANI
@@ -63,8 +63,8 @@ export default function NavToggle({
             <button
                 onClick={handleMangaClick}
                 className={`px-3 py-1.5 text-[10px] font-black uppercase tracking-wider transition-all duration-300 ${activeTab === 'manga'
-                        ? 'bg-yorumi-main text-white'
-                        : 'text-gray-500 hover:text-white'
+                    ? 'bg-yorumi-manga text-white'
+                    : 'text-gray-500 hover:text-white'
                     }`}
             >
                 MAN
