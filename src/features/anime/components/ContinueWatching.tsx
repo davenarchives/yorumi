@@ -15,7 +15,7 @@ interface ContinueWatchingProps {
     items: ContinueWatchingItem[];
     variant?: 'dashboard' | 'page';
     onWatchClick: (anime: Anime, episodeNumber: number) => void;
-    onRemove: (animeId: number) => void;
+    onRemove: (animeId: string | number) => void;
     onViewAll?: () => void;
     onBack?: () => void;
 }
@@ -48,7 +48,14 @@ export default function ContinueWatching({
                         <div
                             key={item.animeId}
                             className="relative group cursor-pointer"
-                            onClick={() => onWatchClick({ mal_id: parseInt(item.animeId) } as Anime, item.episodeNumber)}
+                            onClick={() => {
+                                const isHybrid = item.animeId.toString().startsWith('s:');
+                                onWatchClick({
+                                    mal_id: isHybrid ? 0 : parseInt(item.animeId),
+                                    scraperId: isHybrid ? item.animeId : undefined,
+                                    title: item.animeTitle
+                                } as Anime, item.episodeNumber);
+                            }}
                         >
                             <div className="relative aspect-video rounded-lg overflow-hidden mb-3 shadow-lg border border-white/5 transition-colors">
                                 <img
@@ -93,7 +100,14 @@ export default function ContinueWatching({
                 <div
                     key={item.animeId}
                     className="relative group h-full flex-[0_0_240px] sm:flex-[0_0_280px] md:flex-[0_0_320px]"
-                    onClick={() => onWatchClick({ mal_id: parseInt(item.animeId) } as Anime, item.episodeNumber)}
+                    onClick={() => {
+                        const isHybrid = item.animeId.toString().startsWith('s:');
+                        onWatchClick({
+                            mal_id: isHybrid ? 0 : parseInt(item.animeId),
+                            scraperId: isHybrid ? item.animeId : undefined,
+                            title: item.animeTitle
+                        } as Anime, item.episodeNumber);
+                    }}
                 >
                     <div className="relative aspect-video rounded-lg overflow-hidden mb-3 shadow-lg border border-white/5 transition-colors cursor-pointer">
                         <img
@@ -116,7 +130,7 @@ export default function ContinueWatching({
                             className="absolute top-2 right-2 p-1.5 rounded-full bg-black/60 backdrop-blur hover:bg-red-500/80 text-white/80 hover:text-white transition-all opacity-0 group-hover:opacity-100 z-10"
                             onClick={(e) => {
                                 e.stopPropagation();
-                                onRemove(parseInt(item.animeId));
+                                onRemove(item.animeId);
                             }}
                             title="Remove from history"
                         >

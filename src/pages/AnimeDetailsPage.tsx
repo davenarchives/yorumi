@@ -50,7 +50,7 @@ export default function AnimeDetailsPage() {
     const [activeTab, setActiveTab] = useState<'summary' | 'relations'>('summary');
 
     // Derived state for button, but useWatchList is reactive so we can just use isInWatchList(id)
-    const animeId = selectedAnime ? (selectedAnime.id || selectedAnime.mal_id).toString() : '';
+    const animeId = selectedAnime ? (selectedAnime.scraperId || selectedAnime.id || selectedAnime.mal_id).toString() : '';
     const inList = isInWatchList(animeId);
 
     const handleToggleList = () => {

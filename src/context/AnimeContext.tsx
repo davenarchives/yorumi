@@ -55,7 +55,7 @@ interface AnimeContextType {
     // Continue Watching
     continueWatchingList: any[];
     saveProgress: (anime: Anime, episode: any) => void;
-    removeFromHistory: (malId: number) => void;
+    removeFromHistory: (malId: number | string) => void;
 
     // Episode Tracking
     watchedEpisodes: Set<number>;

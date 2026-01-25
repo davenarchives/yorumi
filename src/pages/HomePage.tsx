@@ -26,7 +26,7 @@ export default function HomePage() {
 
     const handleWatchClick = (item: Anime, episodeNumber?: number) => {
         const title = slugify(item.title || item.title_english || 'anime');
-        const id = item.mal_id || item.id;
+        const id = item.scraperId || item.mal_id || item.id;
         const url = episodeNumber
             ? `/anime/watch/${title}/${id}?ep=${episodeNumber}`
             : `/anime/watch/${title}/${id}`;

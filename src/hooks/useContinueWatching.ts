@@ -55,7 +55,7 @@ export function useContinueWatching() {
         }
     }, [user]);
 
-    const removeFromHistory = useCallback(async (malId: number) => {
+    const removeFromHistory = useCallback(async (malId: number | string) => {
         if (!user) return;
 
         try {

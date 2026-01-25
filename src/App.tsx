@@ -188,7 +188,7 @@ function App() {
       {/* Scroll to Top Button */}
       <ScrollToTop activeTab={activeTab as 'anime' | 'manga'} />
 
-      <Footer />
+      {!location.pathname.includes('/watch/') && !location.pathname.includes('/read/') && <Footer />}
     </div>
   );
 }

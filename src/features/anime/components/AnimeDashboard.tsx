@@ -17,7 +17,7 @@ interface AnimeDashboardProps {
     onAnimeClick: (anime: Anime) => void;
     onWatchClick: (anime: Anime, episodeNumber?: number) => void;
     onViewAll: (type: 'trending' | 'seasonal' | 'continue_watching' | 'popular') => void;
-    onRemoveFromHistory: (animeId: number) => void;
+    onRemoveFromHistory: (animeId: number | string) => void;
 }
 
 export default function AnimeDashboard({

@@ -21,12 +21,6 @@ const Footer = () => {
 
     return (
         <footer className="relative bg-[#0a0a0a] pt-12 pb-8 border-t border-white/5 overflow-hidden">
-            {/* Background Gradients (Subtle) */}
-            <div className="absolute inset-0 pointer-events-none select-none overflow-hidden">
-                <div className={`absolute -top-[50%] -left-[10%] w-[50%] h-[100%] ${isManga ? 'bg-yorumi-manga/5' : 'bg-yorumi-accent/5'} rounded-full blur-[120px]`} />
-                <div className="absolute -bottom-[50%] -right-[10%] w-[50%] h-[100%] bg-yorumi-main/5 rounded-full blur-[120px]" />
-            </div>
-
             <div className="relative z-10 max-w-7xl mx-auto px-4 md:px-8">
                 {/* Top Section: Logo & Socials */}
                 {/* Top Section: Logo & Socials */}
