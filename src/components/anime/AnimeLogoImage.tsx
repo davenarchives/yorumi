@@ -4,6 +4,7 @@ interface AnimeLogoImageProps {
     anilistId: number;
     title: string;
     className?: string;
+    style?: React.CSSProperties;
     size?: 'small' | 'medium' | 'large'; // small: 80px, medium: 120px, large: 160px
 }
 
@@ -89,7 +90,7 @@ export async function preloadLogos(anilistIds: number[]): Promise<void> {
     }
 }
 
-export default function AnimeLogoImage({ anilistId, title, className = '', size = 'medium' }: AnimeLogoImageProps) {
+export default function AnimeLogoImage({ anilistId, title, className = '', size = 'medium', style }: AnimeLogoImageProps) {
     const [logoUrl, setLogoUrl] = useState<string | null>(null);
     const [hasError, setHasError] = useState(false);
 
@@ -195,7 +196,8 @@ export default function AnimeLogoImage({ anilistId, title, className = '', size 
                 className={`max-w-full h-auto object-contain fade-in ${className}`}
                 style={{
                     maxHeight: getMaxHeight(),
-                    filter: 'drop-shadow(0 4px 12px rgba(0, 0, 0, 0.8))'
+                    filter: 'drop-shadow(0 4px 12px rgba(0, 0, 0, 0.8))',
+                    ...style
                 }}
                 onError={() => {
                     console.warn('[AnimeLogoImage] Image load error, falling back to text');
@@ -214,4 +216,3 @@ export default function AnimeLogoImage({ anilistId, title, className = '', size 
         </h1>
     );
 }
-

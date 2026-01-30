@@ -70,8 +70,7 @@ const SpotlightHero: React.FC<SpotlightHeroProps> = ({ animeList, onAnimeClick, 
                             anime.images?.jpg?.large_image_url ??
                             anime.images?.jpg?.image_url;
 
-                        // Use portrait for cover card
-                        const portraitImage = anime.images?.jpg?.large_image_url ?? anime.images?.jpg?.image_url;
+
 
                         return (
                             <div key={anime.mal_id} className="relative min-w-full h-full flex-[0_0_100%]">
@@ -97,22 +96,20 @@ const SpotlightHero: React.FC<SpotlightHeroProps> = ({ animeList, onAnimeClick, 
                                         {/* Left Column: Text Info */}
                                         <div className="flex-1 pointer-events-auto max-w-2xl w-full min-w-0">
                                             <div className="text-yorumi-accent font-bold tracking-wider text-sm md:text-base mb-2 md:mb-3 select-none flex items-center gap-3">
-                                                <div className="md:hidden h-16 w-12 rounded overflow-hidden shadow-lg border border-white/10 flex-shrink-0 relative">
-                                                    <img src={portraitImage} alt="" className="w-full h-full object-cover" />
-                                                </div>
                                                 #{index + 1} Spotlight
                                             </div>
 
                                             {/* Logo */}
-                                            <div className={`${anime.title.length > 50 ? 'max-h-12 md:max-h-16' :
-                                                anime.title.length > 30 ? 'max-h-16 md:max-h-20' :
-                                                    'max-h-20 md:max-h-24'
-                                                } mb-8 md:mb-12 flex items-start overflow-visible`}>
+                                            <div className={`${anime.title.length > 50 ? 'max-h-8 md:max-h-24' :
+                                                anime.title.length > 30 ? 'max-h-10 md:max-h-28' :
+                                                    'max-h-14 md:max-h-32'
+                                                } mb-8 md:mb-12 flex items-start overflow-visible max-w-[80%] md:max-w-none`}>
                                                 <AnimeLogoImage
                                                     anilistId={anime.id || anime.mal_id}
                                                     title={anime.title}
                                                     className="drop-shadow-2xl max-h-full origin-left object-contain"
                                                     size="medium"
+                                                    style={{ maxHeight: 'inherit' }}
                                                 />
                                             </div>
 

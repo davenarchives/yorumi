@@ -23,8 +23,7 @@ const Footer = () => {
         <footer className="relative bg-[#0a0a0a] pt-12 pb-8 border-t border-white/5 overflow-hidden">
             <div className="relative z-10 max-w-7xl mx-auto px-4 md:px-8">
                 {/* Top Section: Logo & Socials */}
-                {/* Top Section: Logo & Socials */}
-                <div className="flex flex-col md:flex-row items-center justify-start gap-8 mb-10 border-b border-white/5 pb-8">
+                <div className="flex flex-col md:flex-row items-center justify-center md:justify-start gap-8 mb-10 border-b border-white/5 pb-8">
                     {/* Logo */}
                     <Link to={isManga ? '/manga' : '/'} className="flex items-center gap-2 group select-none">
                         <div className="flex items-center">
@@ -63,9 +62,9 @@ const Footer = () => {
                 </div>
 
                 {/* A-Z List */}
-                <div className="flex flex-col md:flex-row items-baseline gap-4 mb-8">
+                <div className="flex flex-col md:flex-row items-center md:items-baseline gap-4 mb-8 text-center md:text-left">
                     <span className="text-xl font-bold text-white shrink-0">A-Z LIST</span>
-                    <span className="text-sm text-gray-400 border-l border-white/10 pl-4 h-full  items-center hidden md:flex">
+                    <span className="text-sm text-gray-400 border-l border-white/10 pl-4 h-full hidden md:flex items-center">
                         Searching {isManga ? 'manga' : 'anime'} order by alphabet name A to Z.
                     </span>
                     <span className="text-sm text-gray-400 md:hidden">
@@ -73,7 +72,7 @@ const Footer = () => {
                     </span>
                 </div>
 
-                <div className="flex flex-wrap gap-2 mb-10">
+                <div className="flex flex-wrap justify-center md:justify-start gap-2 mb-10">
                     {alphabets.map((abc) => (
                         <Link
                             key={abc}
@@ -87,7 +86,7 @@ const Footer = () => {
                 </div>
 
                 {/* Bottom Links */}
-                <div className="flex flex-wrap gap-x-8 gap-y-4 text-sm font-medium text-gray-300 mb-6 border-t border-white/5 pt-8">
+                <div className="flex flex-wrap justify-center md:justify-start gap-x-8 gap-y-4 text-sm font-medium text-gray-300 mb-6 border-t border-white/5 pt-8">
                     <a href="#" className={`transition-colors ${accentHover}`}>Terms of service</a>
                     <a href="#" className={`transition-colors ${accentHover}`}>DMCA</a>
                     <a href="#" className={`transition-colors ${accentHover}`}>Contact</a>
@@ -95,7 +94,7 @@ const Footer = () => {
                 </div>
 
                 {/* Disclaimer & Copyright */}
-                <div className="space-y-2 text-xs text-gray-500">
+                <div className="space-y-2 text-xs text-gray-500 text-center md:text-left">
                     <p>
                         Yorumi does not store any files on our server, we only linked to the media which is hosted on 3rd party services.
                     </p>
