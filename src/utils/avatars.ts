@@ -73,6 +73,15 @@ export const getRandomAvatar = () => {
     return `/avatars/${randomItem.path}`;
 };
 
+export const getDeterministicAvatar = (seed: string) => {
+    let hash = 0;
+    for (let i = 0; i < seed.length; i++) {
+        hash = seed.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const index = Math.abs(hash) % AVATAR_DATA.length;
+    return `/avatars/${AVATAR_DATA[index].path}`;
+};
+
 export const getAvatarsByCategory = (category: AvatarCategory | 'All'): AvatarItem[] => {
     if (category === 'All') return AVATAR_DATA;
     return AVATAR_DATA.filter(item => item.tags.includes(category));

@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { type User, signInWithPopup, signOut, onAuthStateChanged, updateProfile } from 'firebase/auth';
-import { auth, googleProvider } from '../services/firebase';
-import { getRandomAvatar } from '../utils/avatars';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { auth, googleProvider, db } from '../services/firebase';
+import { getDeterministicAvatar } from '../utils/avatars';
 import { syncStorage } from '../utils/storage';
 
 interface AuthContextType {
@@ -16,39 +17,32 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// API URL - Assume localhost for dev or relative path in prod
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [user, setUser] = useState<User | null>(null);
     const [avatar, setAvatar] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
-    const fetchUserAvatar = async () => {
+    const fetchUserAvatar = async (uid: string) => {
         try {
-            const res = await fetch(`${API_URL}/user/avatar`, { cache: 'no-store' });
-            if (res.ok) {
-                const data = await res.json();
-                if (data.avatar) {
-                    setAvatar(data.avatar);
-                    return data.avatar;
-                }
+            const docRef = doc(db, 'users', uid);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                return docSnap.data().avatar as string;
             }
         } catch (error) {
-            console.error('Failed to fetch user avatar:', error);
+            console.error('Failed to fetch user avatar from Firestore:', error);
         }
         return null;
     };
 
-    const saveUserAvatar = async (newAvatar: string) => {
+    const saveUserAvatar = async (uid: string, newAvatar: string) => {
         try {
-            await fetch(`${API_URL}/user/avatar`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ avatarUrl: newAvatar })
-            });
+            const docRef = doc(db, 'users', uid);
+            await setDoc(docRef, { avatar: newAvatar }, { merge: true });
         } catch (error) {
-            console.error('Failed to save user avatar:', error);
+            console.error('Failed to save user avatar to Firestore:', error);
         }
     };
 
@@ -70,8 +64,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     setAvatar(storedAvatar);
                 }
 
-                // 2. Fetch from Backend (Source of Truth) and update if different
-                const dbAvatar = await fetchUserAvatar();
+                // 2. Fetch from Backend (Source of Truth - Firestore) and update if different
+                const dbAvatar = await fetchUserAvatar(currentUser.uid);
 
                 if (dbAvatar) {
                     if (dbAvatar !== storedAvatar) {
@@ -81,12 +75,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 } else {
                     // 3. If no DB avatar but we have local, sync local to DB
                     if (storedAvatar) {
-                        saveUserAvatar(storedAvatar);
+                        saveUserAvatar(currentUser.uid, storedAvatar);
                     } else {
-                        // 4. If neither, generate new random
-                        const newAvatar = getRandomAvatar();
+                        // 4. If neither, generate new random (deterministic based on UID)
+                        const newAvatar = getDeterministicAvatar(currentUser.uid);
                         setAvatar(newAvatar);
-                        saveUserAvatar(newAvatar);
+                        saveUserAvatar(currentUser.uid, newAvatar);
                         localStorage.setItem(`avatar_${currentUser.uid}`, newAvatar);
                     }
                 }
@@ -131,11 +125,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const updateAvatar = async (newAvatarPath: string) => {
         setAvatar(newAvatarPath);
-        // Save to DB
-        await saveUserAvatar(newAvatarPath);
 
-        // Keep legacy sync for now
         if (auth.currentUser) {
+            // Save to DB
+            await saveUserAvatar(auth.currentUser.uid, newAvatarPath);
+            // Keep legacy sync for now
             localStorage.setItem(`avatar_${auth.currentUser.uid}`, newAvatarPath);
         }
     };
