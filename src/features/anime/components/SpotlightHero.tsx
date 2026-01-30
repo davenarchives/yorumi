@@ -3,6 +3,7 @@ import useEmblaCarousel from 'embla-carousel-react';
 import Autoplay from 'embla-carousel-autoplay';
 import type { Anime } from '../../../types/anime';
 import AnimeLogoImage from '../../../components/anime/AnimeLogoImage';
+import SpotlightSkeleton from './SpotlightSkeleton';
 
 interface SpotlightHeroProps {
     animeList: Anime[];
@@ -50,7 +51,10 @@ const SpotlightHero: React.FC<SpotlightHeroProps> = ({ animeList, onAnimeClick, 
         if (emblaApi) emblaApi.scrollTo(index);
     }, [emblaApi]);
 
-    if (animeList.length === 0) return null;
+    // Show skeleton while loading
+    if (animeList.length === 0) {
+        return <SpotlightSkeleton />;
+    }
 
     return (
         <div

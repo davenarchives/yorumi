@@ -38,7 +38,9 @@ export default function HomePage() {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }, [anime.currentPage]);
 
-    if (anime.loading && anime.currentPage === 1) {
+    // Only show full-page loading if we're on the first page AND have absolutely no data
+    // This allows cached spotlight and other sections to show immediately
+    if (anime.loading && anime.currentPage === 1 && anime.topAnime.length === 0 && anime.spotlightAnime.length === 0 && anime.trendingAnime.length === 0) {
         return (
             <div className="flex items-center justify-center min-h-screen">
                 <LoadingSpinner size="lg" text="Loading Anime..." />

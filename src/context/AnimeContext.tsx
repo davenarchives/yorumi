@@ -19,6 +19,7 @@ interface AnimeContextType {
     epLoading: boolean;
     detailsLoading: boolean;
     loading: boolean;
+    spotlightLoading: boolean;
     trendingLoading: boolean;
     popularSeasonLoading: boolean;
     currentPage: number;
@@ -81,6 +82,7 @@ export function AnimeProvider({ children }: { children: ReactNode }) {
 
     // Loading States
     const [loading, setLoading] = useState(true);
+    const [spotlightLoading, setSpotlightLoading] = useState(true);
     const [trendingLoading, setTrendingLoading] = useState(true);
     const [popularSeasonLoading, setPopularSeasonLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -114,7 +116,10 @@ export function AnimeProvider({ children }: { children: ReactNode }) {
 
     const fetchHomeData = async () => {
         const fetchSpotlight = async () => {
-            if (spotlightAnime.length > 0) return;
+            if (spotlightAnime.length > 0) {
+                setSpotlightLoading(false);
+                return;
+            }
 
             // Try to load from localStorage for instant display
             const SPOTLIGHT_CACHE_KEY = 'yorumi_spotlight_cache';
@@ -134,6 +139,7 @@ export function AnimeProvider({ children }: { children: ReactNode }) {
                         if (parsed && parsed.length > 0) {
                             console.log('📦 Loaded spotlight from localStorage cache');
                             setSpotlightAnime(parsed);
+                            setSpotlightLoading(false); // Cache loaded, stop showing skeleton
                             // Preload logos for cached spotlight anime
                             const spotlightIds = parsed.map((a: Anime) => a.id || a.mal_id).filter(Boolean);
                             preloadLogos(spotlightIds);
@@ -175,6 +181,7 @@ export function AnimeProvider({ children }: { children: ReactNode }) {
             }
 
             // No cache available - must await the network request
+            setSpotlightLoading(true);
             try {
                 const { data } = await animeService.getHiAnimeSpotlight();
                 if (data && data.length > 0) {
@@ -194,6 +201,8 @@ export function AnimeProvider({ children }: { children: ReactNode }) {
                 }
             } catch (e) {
                 console.error("Failed to fetch HiAnime spotlight", e);
+            } finally {
+                setSpotlightLoading(false);
             }
         };
 
@@ -660,7 +669,7 @@ export function AnimeProvider({ children }: { children: ReactNode }) {
         <AnimeContext.Provider value={{
             topAnime, spotlightAnime, trendingAnime, popularSeason, selectedAnime,
             showAnimeDetails, showWatchModal, episodes, scraperSession, epLoading,
-            detailsLoading, loading, trendingLoading, popularSeasonLoading, currentPage, lastVisiblePage,
+            detailsLoading, loading, spotlightLoading, trendingLoading, popularSeasonLoading, currentPage, lastVisiblePage,
             error, episodeSearchQuery, viewAllAnime, viewAllLoading, viewAllPagination,
             viewMode, setEpisodeSearchQuery, handleAnimeClick, startWatching,
             watchAnime, closeDetails, closeWatch, closeAllModals, changePage,
