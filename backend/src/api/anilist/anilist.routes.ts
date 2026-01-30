@@ -224,7 +224,7 @@ router.get('/anime/:id', async (req, res) => {
             return;
         }
 
-        const data = await anilistService.getMediaDetails(numericId); // Use getMediaDetails to be consistent?
+        const data = await anilistService.getAnimeById(numericId);
         // Or getAnimeById was calling getMediaDetails? 
         // anilistService.getAnimeById uses generic fetch.
         // Let's stick to getMediaDetails which I added.
